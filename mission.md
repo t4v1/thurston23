@@ -24,11 +24,21 @@ $z^{-3}$ — the Riemannian volume of the metric $(dx^2+dy^2+dz^2)/z^2$ written
 out, so that no Riemannian machinery is required. The hyperbolic distance is
 given by its closed formula
 $$\cosh d(p,q) \;=\; 1 + \frac{|p-q|^2}{2\,p_3\,q_3}.$$
-A Kleinian group is a group acting freely and properly discontinuously by
-hyperbolic isometries; the quotient is a hyperbolic $3$-manifold, and every
-hyperbolic $3$-manifold arises this way. The volume of the quotient is the
-measure of a fundamental domain, and the set of volumes collects those that are
-finite and positive.
+A Kleinian action is a free, properly discontinuous action by hyperbolic
+isometries; the quotient is a complete hyperbolic $3$-manifold, discreteness and
+torsion freeness being consequences rather than hypotheses. The volume of the
+quotient is the measure of a fundamental domain, in the sense of Mathlib's
+`MeasureTheory.IsFundamentalDomain`, and the set of volumes collects those that
+are finite and positive.
+
+Two conventions are stated rather than derived, and are worth flagging.
+Isometries are not required to preserve orientation, so the set of volumes also
+contains those of non-orientable quotients; this enlarges the set but not its
+$\mathbb{Q}$-span, so neither goal is affected. And preservation of the
+hyperbolic volume is a field of the structure rather than a consequence of
+preserving the distance: it holds for every hyperbolic isometry, but deriving it
+amounts to classifying $\mathrm{Isom}(\mathbb{H}^3)$, which is not the subject
+of this mission.
 
 ## Formalization targets
 

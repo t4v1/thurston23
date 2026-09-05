@@ -16,14 +16,21 @@ The bundle below fixes the meaning of every word in that sentence. Hyperbolic
 `3`-space is the upper half-space; its volume is Lebesgue measure with density
 `z⁻³`, which is the Riemannian volume of the hyperbolic metric written out, so
 no Riemannian machinery is needed; the hyperbolic distance is given by its
-closed formula; a Kleinian group is a group acting freely and properly
-discontinuously by hyperbolic isometries; and the volume of the quotient
-manifold is the measure of a fundamental domain.
+closed formula; a Kleinian action is a free, properly discontinuous action by
+hyperbolic isometries; and the volume of the quotient is the measure of a
+fundamental domain in the sense of `MeasureTheory.IsFundamentalDomain`.
+
+Isometries are not required to preserve orientation, so the set of volumes
+below contains the volumes of non-orientable quotients as well; this enlarges
+the set but not its `ℚ`-span, and both goals below are unaffected. That
+isometries preserve the hyperbolic volume is a field of the structure rather
+than a derived fact: deriving it amounts to classifying the isometry group of
+`ℍ³`, which is not the subject of this mission.
 
 Two milestones are stated: that passing to a subgroup of index `n` multiplies
 the volume by `n`, which is the source of every known rational relation between
 volumes, and that the set of volumes is nonempty, without which the goal would
-be vacuous.
+be vacuous. Nothing here is proved: this is a statement bundle.
 -/
 import Mathlib
 
@@ -56,52 +63,53 @@ noncomputable def hdist (p q : H3) : ℝ :=
 
 /-! ## Kleinian groups and the volumes of their quotients -/
 
-/-- A Kleinian group: a group acting on hyperbolic `3`-space by hyperbolic
-isometries, freely and properly discontinuously. The quotient of `ℍ³` by such
-an action is a hyperbolic `3`-manifold, and every hyperbolic `3`-manifold
-arises this way. -/
-structure KleinianAction (G : Type) [Group G] where
-  /-- the action map -/
-  act : G → H3 → H3
-  one_act : ∀ p, act 1 p = p
-  mul_act : ∀ g h p, act (g * h) p = act g (act h p)
+/-- A Kleinian action: a group acting on hyperbolic `3`-space by hyperbolic
+isometries, freely and properly discontinuously. The quotient by such an action
+is a complete hyperbolic `3`-manifold; discreteness and torsion freeness are
+consequences of the conditions below rather than extra hypotheses. Preservation
+of `hvol` is stated as a field: it is true of every hyperbolic isometry, but
+deriving it from `isometry` means classifying `Isom(ℍ³)`, which is not the
+subject of this mission. -/
+structure IsKleinian (G : Type) [Group G] [MulAction G H3] : Prop where
   /-- each element acts by a hyperbolic isometry -/
-  isometry : ∀ g p q, hdist (act g p) (act g q) = hdist p q
+  isometry : ∀ (g : G) (p q : H3), hdist (g • p) (g • q) = hdist p q
+  /-- each element preserves the hyperbolic volume -/
+  measure_preserving : ∀ g : G, MeasurePreserving (fun p : H3 => g • p) hvol hvol
   /-- the action is free: no element except the identity fixes a point -/
-  free : ∀ g : G, g ≠ 1 → ∀ p, act g p ≠ p
+  free : ∀ g : G, g ≠ 1 → ∀ p : H3, g • p ≠ p
   /-- the action is properly discontinuous -/
   properly_discontinuous :
-    ∀ K : Set H3, IsCompact K → {g : G | (act g '' K ∩ K).Nonempty}.Finite
-
-/-- `F` is a fundamental domain for the action of the subgroup `H` on `ℍ³`:
-every point of `ℍ³` has exactly one translate in `F` under `H`. -/
-def IsFundDomain {G : Type} [Group G] (A : KleinianAction G) (H : Subgroup G)
-    (F : Set H3) : Prop :=
-  MeasurableSet F ∧ ∀ p : H3, ∃! g : H, A.act (g : G) p ∈ F
+    ∀ K : Set H3, IsCompact K → {g : G | ((fun p : H3 => g • p) '' K ∩ K).Nonempty}.Finite
 
 /-- The set of volumes of finite-volume hyperbolic `3`-manifolds: the measures
 of fundamental domains of Kleinian actions. -/
 def hyperbolicVolumes : Set ℝ :=
-  {v | ∃ (G : Type) (_ : Group G) (A : KleinianAction G) (F : Set H3),
-      IsFundDomain A ⊤ F ∧ hvol F = ENNReal.ofReal v ∧ 0 < v}
+  {v | ∃ (G : Type) (_ : Group G) (_ : MulAction G H3), IsKleinian G ∧
+      ∃ F : Set H3, MeasureTheory.IsFundamentalDomain G F hvol ∧
+        hvol F = ENNReal.ofReal v ∧ 0 < v}
 
 /-! ## Milestones -/
 
 /-- **Milestone 1.** Passing to a subgroup of index `n` multiplies the volume
 by `n`: a fundamental domain for `H` is the union of `n` translates of a
 fundamental domain for `G`. This is the source of every known rational relation
-between the volumes of hyperbolic `3`-manifolds: commensurable manifolds, that
-is manifolds with a common finite cover, have rationally related volumes. -/
-theorem volume_of_finite_index {G : Type} [Group G] (A : KleinianAction G)
-    (H : Subgroup G) (n : ℕ) (hn : H.index = n) (hn0 : 0 < n)
-    (F FH : Set H3) (hF : IsFundDomain A ⊤ F) (hFH : IsFundDomain A H FH)
-    (v w : ℝ) (hv : hvol F = ENNReal.ofReal v) (hw : hvol FH = ENNReal.ofReal w) :
-    w = n * v := by
+between the volumes of hyperbolic `3`-manifolds — commensurable manifolds, that
+is manifolds with a common finite cover, have rationally related volumes — and
+it is what makes the literal reading of Question 23 false. Stated in `ℝ≥0∞` so
+that no degenerate case is hidden by `ENNReal.ofReal`. -/
+theorem volume_of_finite_index {G : Type} [Group G] [MulAction G H3]
+    (hG : IsKleinian G) (H : Subgroup G) (hH : 0 < H.index)
+    (F FH : Set H3) (hF : MeasureTheory.IsFundamentalDomain G F hvol)
+    (hFH : MeasureTheory.IsFundamentalDomain H FH hvol) :
+    hvol FH = H.index • hvol F := by
   sorry
 
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below
-would be vacuously false rather than open. -/
+would be vacuously false rather than open. This is not a warm-up: it asks for a
+concrete cofinite-volume Kleinian group together with a fundamental domain of
+finite positive measure, and Mathlib has no `ℍ³`, no `Isom(ℍ³)` and no action of
+`PSL(2,ℂ)` on the upper half-space. -/
 theorem hyperbolicVolumes_nonempty : hyperbolicVolumes.Nonempty := by
   sorry
 

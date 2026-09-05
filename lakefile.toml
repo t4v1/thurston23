@@ -1,0 +1,9 @@
+# Lake package for the Thurston Question 23 formalization bundle.
+# Requires the local mathlib checkout by path, exactly as in the
+# GillesCourtois collection: nothing is downloaded or rebuilt.
+name = "thurston23"
+version = "0.1.0"
+
+[[require]]
+name = "mathlib"
+path = "../mathlib4"

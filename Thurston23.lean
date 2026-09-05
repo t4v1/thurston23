@@ -42,11 +42,10 @@ open MeasureTheory
 
 /-! ## Hyperbolic `3`-space -/
 
-/-- The upper half-space model of hyperbolic `3`-space. -/
-def H3 : Type := {p : Fin 3 → ℝ // 0 < p 2}
-
-instance : MeasurableSpace H3 := Subtype.instMeasurableSpace
-instance : TopologicalSpace H3 := instTopologicalSpaceSubtype
+/-- The upper half-space model of hyperbolic `3`-space. Declared as an
+`abbrev` so that the measurable and topological structures of the subtype are
+inherited, without naming any auto-generated instance. -/
+abbrev H3 : Type := {p : Fin 3 → ℝ // 0 < p 2}
 
 /-- The hyperbolic volume: Lebesgue measure with density `z⁻³`. This is the
 Riemannian volume of the metric `(dx² + dy² + dz²)/z²` written out. -/

@@ -30,7 +30,9 @@ than a derived fact: deriving it amounts to classifying the isometry group of
 Two milestones are stated: that passing to a subgroup of index `n` multiplies
 the volume by `n`, which is the source of every known rational relation between
 volumes, and that the set of volumes is nonempty, without which the goal would
-be vacuous. Nothing here is proved: this is a statement bundle.
+be vacuous. Milestone 1 is proved below, from a general fact about fundamental
+domains of a finite-index subgroup that Mathlib does not have; Milestone 2 and
+the goal are left open.
 -/
 import Mathlib
 
@@ -87,6 +89,125 @@ def hyperbolicVolumes : Set ℝ :=
       ∃ F : Set H3, MeasureTheory.IsFundamentalDomain G F hvol ∧
         hvol F = ENNReal.ofReal v ∧ 0 < v}
 
+
+/-! ## Supporting material for Milestone 1
+
+Mathlib relates the measures of two fundamental domains of the *same* action but
+has nothing relating a group to a finite-index subgroup, so that is developed
+here. `measure_eq_index_smul` is the general measure-theoretic statement;
+`countable_of_properlyDiscontinuous` supplies the countability of the acting
+group that Mathlib's fundamental-domain API requires throughout, and which for a
+Kleinian group is a consequence of proper discontinuity rather than a hypothesis.
+-/
+
+section FundamentalDomains
+
+open Pointwise
+
+variable {Γ X : Type*} [Group Γ] [MulAction Γ X] [MeasurableSpace X]
+  {μ : Measure X} [SMulInvariantMeasure Γ X μ] [MeasurableConstSMul Γ X]
+
+/-- `Γ ⧸ S` is a `def` wrapper around `Quotient`, so the generic instance for
+quotients of a countable type does not fire on it. -/
+instance instCountableQuotientGroup [Countable Γ] (S : Subgroup Γ) : Countable (Γ ⧸ S) :=
+  Quotient.countable
+
+/-- If `F` is a fundamental domain for `Γ` and `S ≤ Γ`, then the union of the translates
+of `F` by the inverses of a set of representatives of `Γ ⧸ S` is a fundamental domain
+for `S`. This is the geometric content of Milestone 1: a fundamental domain for a
+subgroup is assembled from one copy of `F` per coset. -/
+theorem isFundamentalDomain_iUnion_out [Countable Γ] {F : Set X}
+    (hF : IsFundamentalDomain Γ F μ) (S : Subgroup Γ) :
+    IsFundamentalDomain S (⋃ q : Γ ⧸ S, (Quotient.out q)⁻¹ • F) μ where
+  nullMeasurableSet :=
+    NullMeasurableSet.iUnion fun q => hF.nullMeasurableSet_smul _
+  ae_covers := by
+    filter_upwards [hF.ae_covers] with x hx
+    obtain ⟨g, hg⟩ := hx
+    have hmem : (Quotient.out ((g : Γ ⧸ S)))⁻¹ * g ∈ S := by
+      have := QuotientGroup.eq.mp (QuotientGroup.out_eq' (g : Γ ⧸ S))
+      simpa using this
+    refine ⟨⟨_, hmem⟩, Set.mem_iUnion.2 ⟨(g : Γ ⧸ S), ?_⟩⟩
+    show ((Quotient.out ((g : Γ ⧸ S)))⁻¹ * g) • x ∈ _
+    rw [mul_smul]
+    exact Set.smul_mem_smul_set hg
+  aedisjoint := by
+    intro h₁ h₂ hne
+    have hsmul : ∀ (h : S) (s : Set X), h • s = ((h : Γ)) • s := fun _ _ => rfl
+    show μ (h₁ • _ ∩ h₂ • _) = 0
+    rw [hsmul, hsmul]
+    simp only [Set.smul_set_iUnion, smul_smul, Set.iUnion_inter, Set.inter_iUnion]
+    refine measure_iUnion_null fun q => measure_iUnion_null fun r => hF.aedisjoint ?_
+    intro hcontra
+    apply hne
+    have key : ((h₂ : Γ))⁻¹ * (h₁ : Γ) = (Quotient.out q)⁻¹ * (Quotient.out r) := by
+      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, ← hcontra, inv_mul_cancel_right]
+    have hmem : (Quotient.out q)⁻¹ * (Quotient.out r) ∈ S :=
+      key ▸ S.mul_mem (S.inv_mem h₂.2) h₁.2
+    have hqr : q = r := by
+      have h := QuotientGroup.eq.mpr hmem
+      rwa [QuotientGroup.out_eq', QuotientGroup.out_eq'] at h
+    subst hqr
+    exact Subtype.ext (mul_right_cancel hcontra)
+
+/-- **Milestone 1 in general form.** If `S` has finite index in `Γ`, a fundamental domain
+for `S` has `S.index` times the measure of a fundamental domain for `Γ`. -/
+theorem measure_eq_index_smul [Countable Γ] (S : Subgroup Γ) (hS : 0 < S.index)
+    {F FS : Set X} (hF : IsFundamentalDomain Γ F μ) (hFS : IsFundamentalDomain S FS μ) :
+    μ FS = S.index • μ F := by
+  haveI : S.FiniteIndex := ⟨hS.ne'⟩
+  haveI : Finite (Γ ⧸ S) := Subgroup.finite_quotient_of_finiteIndex
+  haveI : Fintype (Γ ⧸ S) := Fintype.ofFinite _
+  have hd : Pairwise
+      (Function.onFun (AEDisjoint μ) (fun q : Γ ⧸ S => (Quotient.out q)⁻¹ • F)) :=
+    fun q r hqr => hF.aedisjoint fun h => hqr (Quotient.out_injective (inv_injective h))
+  have hm : ∀ q : Γ ⧸ S, NullMeasurableSet ((Quotient.out q)⁻¹ • F) μ :=
+    fun q => hF.nullMeasurableSet_smul _
+  rw [hFS.measure_eq (isFundamentalDomain_iUnion_out hF S), measure_iUnion₀ hd hm]
+  simp only [measure_smul, tsum_fintype, Finset.sum_const, Finset.card_univ]
+  show _ = Nat.card (Γ ⧸ S) • μ F
+  rw [Nat.card_eq_fintype_card]
+
+end FundamentalDomains
+
+section Countability
+
+/-- A group acting properly discontinuously on a nonempty σ-compact space is countable:
+every element moves the basepoint inside some member of a countable compact covering,
+and each such member admits only finitely many elements. -/
+theorem countable_of_properlyDiscontinuous {Γ Y : Type*} [Group Γ] [TopologicalSpace Y]
+    [MulAction Γ Y] [SigmaCompactSpace Y] (x₀ : Y)
+    (hpd : ∀ K : Set Y, IsCompact K →
+      {g : Γ | ((fun p : Y => g • p) '' K ∩ K).Nonempty}.Finite) :
+    Countable Γ := by
+  have hcov : ∀ y : Y, ∃ n, y ∈ compactCovering Y n := fun y =>
+    Set.mem_iUnion.mp (by rw [iUnion_compactCovering]; trivial)
+  have hsub : (Set.univ : Set Γ) ⊆ ⋃ n : ℕ,
+      {g : Γ | ((fun p : Y => g • p) '' (compactCovering Y n) ∩ compactCovering Y n).Nonempty} := by
+    intro g _
+    obtain ⟨a, ha⟩ := hcov x₀
+    obtain ⟨b, hb⟩ := hcov (g • x₀)
+    refine Set.mem_iUnion.2 ⟨max a b, g • x₀, ⟨x₀, ?_, rfl⟩, ?_⟩
+    · exact compactCovering_subset Y (le_max_left a b) ha
+    · exact compactCovering_subset Y (le_max_right a b) hb
+  exact Set.countable_univ_iff.mp
+    (((Set.countable_iUnion fun n => (hpd _ (isCompact_compactCovering Y n)).countable)).mono hsub)
+
+end Countability
+
+section H3Topology
+
+/-- The defining condition of `H3` is open, so `ℍ³` is an open subset of `ℝ³`. -/
+theorem isOpen_upperHalfSpace : IsOpen {p : Fin 3 → ℝ | 0 < p 2} :=
+  isOpen_lt continuous_const (continuous_apply 2)
+
+instance : LocallyCompactSpace H3 := isOpen_upperHalfSpace.locallyCompactSpace
+
+/-- A basepoint of `ℍ³`, used to witness countability of a Kleinian group. -/
+def basepoint : H3 := ⟨fun _ => 1, by norm_num⟩
+
+end H3Topology
+
 /-! ## Milestones -/
 
 /-- **Milestone 1.** Passing to a subgroup of index `n` multiplies the volume
@@ -101,7 +222,12 @@ theorem volume_of_finite_index {G : Type} [Group G] [MulAction G H3]
     (F FH : Set H3) (hF : MeasureTheory.IsFundamentalDomain G F hvol)
     (hFH : MeasureTheory.IsFundamentalDomain H FH hvol) :
     hvol FH = H.index • hvol F := by
-  sorry
+  haveI : SMulInvariantMeasure G H3 hvol :=
+    ⟨fun g _ hs => (hG.measure_preserving g).measure_preimage hs.nullMeasurableSet⟩
+  haveI : MeasurableConstSMul G H3 := ⟨fun g => (hG.measure_preserving g).measurable⟩
+  haveI : Countable G :=
+    countable_of_properlyDiscontinuous basepoint hG.properly_discontinuous
+  exact measure_eq_index_smul H hH hF hFH
 
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below

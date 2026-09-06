@@ -20,7 +20,11 @@ known.
 **Milestones.**
 
 1. `volume_of_finite_index` — a subgroup of index `n` has a fundamental domain
-   of `n` times the volume. This is the source of all known relations.
+   of `n` times the volume. This is the source of all known relations. **Proved**,
+   via a general lemma on fundamental domains of a finite-index subgroup
+   (`measure_eq_index_smul`) that Mathlib does not have, together with the
+   countability of a Kleinian group, which follows from proper discontinuity
+   (`countable_of_properlyDiscontinuous`) rather than being assumed.
 2. `hyperbolicVolumes_nonempty` — at least one finite-volume hyperbolic
    `3`-manifold exists, so the goal is not vacuous.
 
@@ -37,4 +41,6 @@ GillesCourtois collection; nothing is downloaded or rebuilt:
 lake env lean Thurston23.lean
 ```
 
-Only the `sorry` warnings on the four targets should appear.
+Only the `sorry` warnings on the three open targets should appear:
+`hyperbolicVolumes_nonempty`, `thurston_question_23` and
+`thurston_question_23_strong`.

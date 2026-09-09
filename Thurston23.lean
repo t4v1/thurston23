@@ -31,7 +31,8 @@ Two milestones are stated: that passing to a subgroup of index `n` multiplies
 the volume by `n`, which is the source of every known rational relation between
 volumes, and that the set of volumes is nonempty, without which the goal would
 be vacuous. Milestone 1 is proved below, from a general fact about fundamental
-domains of a finite-index subgroup that Mathlib does not have; Milestone 2 and
+domains of a finite-index subgroup that Mathlib does not have, and `hvol` is
+checked against one explicit value, the volume of a cusp box; Milestone 2 and
 the goal are left open.
 -/
 import Mathlib
@@ -207,6 +208,131 @@ instance : LocallyCompactSpace H3 := isOpen_upperHalfSpace.locallyCompactSpace
 def basepoint : H3 := ⟨fun _ => 1, by norm_num⟩
 
 end H3Topology
+
+/-! ## A sanity check on `hvol`
+
+`hvol` is built with `Measure.comap`, which returns the zero measure when its
+measurability side conditions fail — silently, with every theorem about it
+still type-checking. Nothing else in the bundle evaluates `hvol` on a concrete
+set, so one value is computed here: the unit cusp box `[0,1]² × [1,∞)` has
+hyperbolic volume `∫₀¹∫₀¹∫₁^∞ t⁻³ = 1/2`. Consequently `hvol ≠ 0`. -/
+
+section CuspBox
+
+open Set
+
+set_option maxHeartbeats 400000
+
+/-- The unit cusp box `[0,1] × [0,1] × [1,∞)`, as a subset of `ℝ³`. -/
+def cuspBox : Set (Fin 3 → ℝ) := Set.pi Set.univ ![Icc 0 1, Icc 0 1, Ici 1]
+
+/-- The hyperbolic volume of the unit cusp box is `∫₀¹∫₀¹∫₁^∞ t⁻³ = 1/2`. -/
+theorem hvol_cusp_box : hvol (Subtype.val ⁻¹' cuspBox) = 2⁻¹ := by
+  set S : Fin 3 → Set ℝ := ![Icc 0 1, Icc 0 1, Ici 1] with hS
+  set h : Fin 3 → ℝ → ℝ := ![fun _ => 1, fun _ => 1, fun t => (t ^ 3)⁻¹] with hh
+  set f : Fin 3 → ℝ → ℝ := fun i => (S i).indicator (h i) with hf
+  have hSm : ∀ i, MeasurableSet (S i) := by
+    intro i; fin_cases i
+    · exact measurableSet_Icc
+    · exact measurableSet_Icc
+    · exact measurableSet_Ici
+  have hBm : MeasurableSet cuspBox := MeasurableSet.univ_pi hSm
+  have hemb : MeasurableEmbedding (Subtype.val : H3 → Fin 3 → ℝ) :=
+    MeasurableEmbedding.subtype_coe (measurableSet_lt measurable_const (measurable_pi_apply 2))
+  have hBsub : cuspBox ⊆ Set.range (Subtype.val : H3 → Fin 3 → ℝ) := by
+    intro x hx
+    have h2 : x 2 ∈ Ici (1 : ℝ) := Set.mem_univ_pi.1 hx 2
+    exact ⟨⟨x, lt_of_lt_of_le one_pos h2⟩, rfl⟩
+  set F : (Fin 3 → ℝ) → ENNReal := fun x => ENNReal.ofReal ((x 2 ^ (3 : ℕ))⁻¹) with hF
+  have hFm : Measurable F := ((measurable_pi_apply 2).pow_const 3).inv.ennreal_ofReal
+  -- Step 1: unfold `hvol` and transport the integral from `H3` to `ℝ³`.
+  have step1 : hvol (Subtype.val ⁻¹' cuspBox) = ∫⁻ x in cuspBox, F x := by
+    show ((volume : Measure (Fin 3 → ℝ)).comap Subtype.val).withDensity
+      (fun p : H3 => F p.1) (Subtype.val ⁻¹' cuspBox) = _
+    rw [withDensity_apply _ (hemb.measurable hBm), ← lintegral_indicator (hemb.measurable hBm),
+      ← lintegral_indicator hBm]
+    calc ∫⁻ p, (Subtype.val ⁻¹' cuspBox).indicator (fun p : H3 => F p.1) p
+            ∂(volume.comap Subtype.val)
+        = ∫⁻ p, cuspBox.indicator F (Subtype.val p) ∂(volume.comap Subtype.val) :=
+          lintegral_congr fun p => rfl
+      _ = ∫⁻ x, cuspBox.indicator F x ∂((volume.comap Subtype.val).map Subtype.val) :=
+          (lintegral_map (hFm.indicator hBm) hemb.measurable).symm
+      _ = ∫⁻ x, cuspBox.indicator F x ∂(volume.restrict (Set.range Subtype.val)) := by
+          rw [hemb.map_comap]
+      _ = ∫⁻ x, cuspBox.indicator F x := by
+          rw [lintegral_indicator hBm, lintegral_indicator hBm, Measure.restrict_restrict hBm,
+            Set.inter_eq_left.2 hBsub]
+  -- Step 2: the integrand is a product of one-variable functions.
+  have hpt : ∀ x, cuspBox.indicator F x = ENNReal.ofReal (∏ i, f i (x i)) := by
+    intro x
+    by_cases hx : x ∈ cuspBox
+    · have hxi : ∀ i, x i ∈ S i := Set.mem_univ_pi.1 hx
+      rw [Set.indicator_of_mem hx, Fin.prod_univ_three]
+      simp only [hf, Set.indicator_of_mem (hxi 0), Set.indicator_of_mem (hxi 1),
+        Set.indicator_of_mem (hxi 2), hh]
+      simp [hF]
+    · rw [Set.indicator_of_notMem hx]
+      obtain ⟨i, hi⟩ : ∃ i, x i ∉ S i := by
+        by_contra hcon
+        push_neg at hcon
+        exact hx (Set.mem_univ_pi.2 hcon)
+      rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hf, Set.indicator_of_notMem hi])]
+      simp
+  -- Step 3: each factor is integrable and nonnegative.
+  have hfi : ∀ i, Integrable (f i) := by
+    intro i; fin_cases i
+    · exact (integrable_indicator_iff measurableSet_Icc).2 continuous_const.integrableOn_Icc
+    · exact (integrable_indicator_iff measurableSet_Icc).2 continuous_const.integrableOn_Icc
+    · show Integrable ((Ici (1 : ℝ)).indicator fun t => (t ^ 3)⁻¹)
+      refine (integrable_indicator_iff measurableSet_Ici).2 ?_
+      rw [integrableOn_Ici_iff_integrableOn_Ioi]
+      refine (integrableOn_Ioi_rpow_of_lt (a := -3) (by norm_num) one_pos).congr_fun
+        (fun t ht => ?_) measurableSet_Ioi
+      have ht0 : (0 : ℝ) ≤ t := (lt_trans zero_lt_one ht).le
+      simp [Real.rpow_neg ht0]
+  have hint : Integrable (fun x : Fin 3 → ℝ => ∏ i, f i (x i)) := Integrable.fintype_prod hfi
+  have hnn : 0 ≤ᵐ[(volume : Measure (Fin 3 → ℝ))] fun x => ∏ i, f i (x i) := by
+    refine Filter.Eventually.of_forall fun x => Finset.prod_nonneg fun i _ =>
+      Set.indicator_nonneg (fun t ht => ?_) _
+    fin_cases i
+    · exact zero_le_one
+    · exact zero_le_one
+    · have ht1 : (1 : ℝ) ≤ t := ht
+      show (0 : ℝ) ≤ (t ^ 3)⁻¹
+      positivity
+  -- Step 4: Fubini, then three one-dimensional integrals.
+  have I0 : ∫ t, f 0 t = 1 := by
+    show ∫ t, (Icc (0 : ℝ) 1).indicator (fun _ => (1 : ℝ)) t = 1
+    rw [integral_indicator measurableSet_Icc, setIntegral_const, Real.volume_real_Icc_of_le zero_le_one]
+    simp
+  have I1 : ∫ t, f 1 t = 1 := by
+    show ∫ t, (Icc (0 : ℝ) 1).indicator (fun _ => (1 : ℝ)) t = 1
+    rw [integral_indicator measurableSet_Icc, setIntegral_const, Real.volume_real_Icc_of_le zero_le_one]
+    simp
+  have I2 : ∫ t, f 2 t = 1 / 2 := by
+    show ∫ t, (Ici (1 : ℝ)).indicator (fun t => (t ^ 3)⁻¹) t = 1 / 2
+    have hcongr : ∫ t in Ioi (1 : ℝ), (t ^ 3)⁻¹ = ∫ t in Ioi (1 : ℝ), t ^ (-3 : ℝ) :=
+      setIntegral_congr_fun measurableSet_Ioi fun t ht => by
+        have ht0 : (0 : ℝ) ≤ t := (lt_trans zero_lt_one ht).le
+        simp [Real.rpow_neg ht0]
+    rw [integral_indicator measurableSet_Ici, integral_Ici_eq_integral_Ioi, hcongr,
+      integral_Ioi_rpow_of_lt (by norm_num) one_pos]
+    norm_num
+  rw [step1, ← lintegral_indicator hBm]
+  simp_rw [hpt]
+  rw [← ofReal_integral_eq_lintegral_ofReal hint hnn, integral_fintype_prod_volume_eq_prod,
+    Fin.prod_univ_three, I0, I1, I2, one_mul, one_mul, one_div,
+    ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
+
+/-- Consequently the hyperbolic volume is neither the zero measure nor identically infinite. -/
+theorem hvol_ne_zero : hvol ≠ 0 := by
+  intro h
+  have := hvol_cusp_box
+  rw [h] at this
+  simp at this
+  exact (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top) this.symm
+
+end CuspBox
 
 /-! ## Milestones -/
 

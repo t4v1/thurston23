@@ -28,6 +28,11 @@ known.
 2. `hyperbolicVolumes_nonempty` — at least one finite-volume hyperbolic
    `3`-manifold exists, so the goal is not vacuous.
 
+**Sanity check.** `hvol_cusp_box` — the unit cusp box `[0,1]² × [1,∞)` has
+hyperbolic volume `1/2`, so `hvol`, which is built with `Measure.comap`, is not
+the zero measure (`hvol_ne_zero`). Nothing else in the bundle evaluates `hvol`
+on a concrete set.
+
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
 `thurston_question_23_strong`.

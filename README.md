@@ -34,10 +34,17 @@ The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
 
 ## Building
 
-The package requires a local Mathlib checkout at `../mathlib4`, as in the
-GillesCourtois collection; nothing is downloaded or rebuilt:
+The package requires a Mathlib checkout at `../mathlib4-thurston`, pinned to
+commit `120ef86bf4` on Lean `v4.29.0-rc2` — the closest match to the platform
+environment `777aaa6` (Lean v4.29.0-rc3) — with this package's `.lake/packages`
+symlinked into it. A dedicated worktree rather than a shared clone, because a
+shared clone follows Mathlib master and its toolchain moves under the build.
+One-time setup from an existing clone, then nothing is rebuilt:
 
 ```
+git -C ../mathlib4 worktree add --detach ../mathlib4-thurston 120ef86bf4
+(cd ../mathlib4-thurston && lake exe cache get)
+mkdir -p .lake && ln -s "$PWD/../mathlib4-thurston/.lake/packages" .lake/packages
 lake env lean Thurston23.lean
 ```
 

@@ -6,7 +6,7 @@
    "name": "mathlib",
    "manifestFile": "lake-manifest.json",
    "inherited": false,
-   "dir": "../mathlib4",
+   "dir": "../mathlib4-thurston",
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/plausible",
    "type": "git",

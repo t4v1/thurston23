@@ -32,8 +32,9 @@ the volume by `n`, which is the source of every known rational relation between
 volumes, and that the set of volumes is nonempty, without which the goal would
 be vacuous. Milestone 1 is proved below, from a general fact about fundamental
 domains of a finite-index subgroup that Mathlib does not have, and `hvol` is
-checked against one explicit value, the volume of a cusp box; Milestone 2 and
-the goal are left open.
+checked against one explicit value, the volume of a cusp box. The positive half of
+Thurston's framing is also proved: commensurable subgroups of a Kleinian group
+have rationally related volumes. Milestone 2 and the goal are left open.
 -/
 import Mathlib
 
@@ -354,6 +355,130 @@ theorem volume_of_finite_index {G : Type} [Group G] [MulAction G H3]
   haveI : Countable G :=
     countable_of_properlyDiscontinuous basepoint hG.properly_discontinuous
   exact measure_eq_index_smul H hH hF hFH
+
+/-! ## Commensurable groups have rationally related volumes
+
+The positive half of Thurston's framing, stated exactly. If `Γ₁` and `Γ₂` are
+subgroups of one Kleinian group and are commensurable — Mathlib's definition is
+that `Γ₁ ⊓ Γ₂` has finite index in both — then Milestone 1 applied twice to the
+same fundamental domain for the intersection gives
+`[Γ₁ : Γ₁ ⊓ Γ₂] · vol Γ₁ = vol (Γ₁ ⊓ Γ₂) = [Γ₂ : Γ₁ ⊓ Γ₂] · vol Γ₂`, so the ratio of
+the volumes is rational. Every known rational relation between volumes of
+hyperbolic `3`-manifolds arises this way. The converse is false: Ruberman's
+mutation preserves volume and typically destroys commensurability.
+
+The general statement is proved for any countable group acting on any measure
+space with an invariant measure, as Milestone 1 was, and then specialised. -/
+
+section Commensurable
+
+open Pointwise
+
+variable {Γ X : Type*} [Group Γ] [MulAction Γ X] [MeasurableSpace X] {μ : Measure X}
+
+/-- A subgroup's action preserves whatever the ambient action preserves. -/
+instance instSMulInvariantMeasureSubgroup (S : Subgroup Γ) [SMulInvariantMeasure Γ X μ] :
+    SMulInvariantMeasure S X μ :=
+  ⟨fun c _ hs => SMulInvariantMeasure.measure_preimage_smul (c : Γ) hs⟩
+
+/-- A subgroup's action is measurable whenever the ambient action is. -/
+instance instMeasurableConstSMulSubgroup (S : Subgroup Γ) [MeasurableConstSMul Γ X] :
+    MeasurableConstSMul S X :=
+  ⟨fun c => measurable_const_smul (c : Γ)⟩
+
+/-- `Γ₁ ⊓ Γ₂` viewed inside `Γ₁` is the same group as viewed inside `Γ₂`: swap the two
+membership proofs. Built by hand so that everything about it is `rfl`. -/
+def subgroupOfSwap (Γ₁ Γ₂ : Subgroup Γ) : ↥(Γ₂.subgroupOf Γ₁) ≃ ↥(Γ₁.subgroupOf Γ₂) where
+  toFun x := ⟨⟨x.1.1, x.2⟩, x.1.2⟩
+  invFun x := ⟨⟨x.1.1, x.2⟩, x.1.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- **Commensurable subgroups have rationally related covolumes**, in the form free of
+rationals and of finiteness hypotheses: the two relative indices weight the two
+volumes equally, both being the volume of a fundamental domain for `Γ₁ ⊓ Γ₂`. -/
+theorem relIndex_smul_measure_eq [Countable Γ] [SMulInvariantMeasure Γ X μ]
+    [MeasurableConstSMul Γ X] {Γ₁ Γ₂ : Subgroup Γ} (h : Subgroup.Commensurable Γ₁ Γ₂)
+    {F₁ F₂ : Set X} (hF₁ : IsFundamentalDomain Γ₁ F₁ μ) (hF₂ : IsFundamentalDomain Γ₂ F₂ μ) :
+    Γ₂.relIndex Γ₁ • μ F₁ = Γ₁.relIndex Γ₂ • μ F₂ := by
+  -- one fundamental domain for the intersection, built inside `Γ₂` ...
+  have hH₂ : IsFundamentalDomain (Γ₁.subgroupOf Γ₂)
+      (⋃ q : Γ₂ ⧸ Γ₁.subgroupOf Γ₂, (Quotient.out q)⁻¹ • F₂) μ :=
+    isFundamentalDomain_iUnion_out hF₂ _
+  -- ... is also one inside `Γ₁`, since both act through `Γ`
+  have hH₁ : IsFundamentalDomain (Γ₂.subgroupOf Γ₁)
+      (⋃ q : Γ₂ ⧸ Γ₁.subgroupOf Γ₂, (Quotient.out q)⁻¹ • F₂) μ := by
+    have := hH₂.image_of_equiv (Equiv.refl X) (Measure.QuasiMeasurePreserving.id μ)
+      (subgroupOfSwap Γ₁ Γ₂) (fun g x => rfl)
+    simpa using this
+  have e₂ := measure_eq_index_smul (Γ₁.subgroupOf Γ₂)
+    (Nat.pos_of_ne_zero h.1) hF₂ hH₂
+  have e₁ := measure_eq_index_smul (Γ₂.subgroupOf Γ₁)
+    (Nat.pos_of_ne_zero h.2) hF₁ hH₁
+  show (Γ₂.subgroupOf Γ₁).index • μ F₁ = (Γ₁.subgroupOf Γ₂).index • μ F₂
+  rw [← e₁, ← e₂]
+
+/-- The same, as a rational multiple. -/
+theorem exists_rat_measure_eq [Countable Γ] [SMulInvariantMeasure Γ X μ]
+    [MeasurableConstSMul Γ X] {Γ₁ Γ₂ : Subgroup Γ} (h : Subgroup.Commensurable Γ₁ Γ₂)
+    {F₁ F₂ : Set X} (hF₁ : IsFundamentalDomain Γ₁ F₁ μ) (hF₂ : IsFundamentalDomain Γ₂ F₂ μ) :
+    ∃ q : ℚ, 0 < q ∧ μ F₁ = ENNReal.ofReal q * μ F₂ := by
+  have key := relIndex_smul_measure_eq h hF₁ hF₂
+  have h₁ : 0 < Γ₂.relIndex Γ₁ := Nat.pos_of_ne_zero h.2
+  have h₂ : 0 < Γ₁.relIndex Γ₂ := Nat.pos_of_ne_zero h.1
+  set n₁ := Γ₂.relIndex Γ₁
+  set n₂ := Γ₁.relIndex Γ₂
+  refine ⟨(n₂ : ℚ) / n₁, div_pos (by exact_mod_cast h₂) (by exact_mod_cast h₁), ?_⟩
+  rw [nsmul_eq_mul, nsmul_eq_mul] at key
+  have hn₁ : (n₁ : ENNReal) ≠ 0 := by exact_mod_cast h₁.ne'
+  have hn₁' : (n₁ : ENNReal) ≠ ⊤ := ENNReal.natCast_ne_top n₁
+  calc μ F₁ = (n₁ : ENNReal)⁻¹ * (n₁ * μ F₁) := by
+        rw [← mul_assoc, ENNReal.inv_mul_cancel hn₁ hn₁', one_mul]
+    _ = (n₁ : ENNReal)⁻¹ * (n₂ * μ F₂) := by rw [key]
+    _ = ENNReal.ofReal (((n₂ : ℚ) / n₁ : ℚ) : ℝ) * μ F₂ := by
+        rw [← mul_assoc]
+        congr 1
+        rw [Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast,
+          ENNReal.ofReal_div_of_pos (by exact_mod_cast h₁), ENNReal.ofReal_natCast,
+          ENNReal.ofReal_natCast, div_eq_mul_inv, mul_comm]
+
+end Commensurable
+
+/-- A subgroup of a Kleinian group is Kleinian: all four conditions restrict. -/
+theorem IsKleinian.subgroup {G : Type} [Group G] [MulAction G H3] (hG : IsKleinian G)
+    (Γ : Subgroup G) : IsKleinian Γ where
+  isometry g p q := hG.isometry (g : G) p q
+  measure_preserving g := hG.measure_preserving (g : G)
+  free g hg p := hG.free (g : G) (fun h => hg (Subtype.ext h)) p
+  properly_discontinuous K hK := by
+    show (Subtype.val ⁻¹' {g : G | ((fun p : H3 => g • p) '' K ∩ K).Nonempty}).Finite
+    exact (hG.properly_discontinuous K hK).preimage Subtype.coe_injective.injOn
+
+/-- The volume of a subgroup's quotient is a hyperbolic volume. -/
+theorem mem_hyperbolicVolumes_of_subgroup {G : Type} [Group G] [MulAction G H3]
+    (hG : IsKleinian G) (Γ : Subgroup G) {F : Set H3} (hF : IsFundamentalDomain Γ F hvol)
+    {v : ℝ} (hv : hvol F = ENNReal.ofReal v) (hpos : 0 < v) : v ∈ hyperbolicVolumes :=
+  ⟨Γ, inferInstance, inferInstance, hG.subgroup Γ, F, hF, hv, hpos⟩
+
+/-- **Commensurable Kleinian groups have rationally related volumes.** For subgroups
+`Γ₁, Γ₂` of one Kleinian group with a common finite-index subgroup, the volumes of
+their quotients have rational ratio. This is the source of every known rational
+relation in `hyperbolicVolumes`; Thurston's question is whether it is the only one. -/
+theorem hvol_ratio_rational_of_commensurable {G : Type} [Group G] [MulAction G H3]
+    (hG : IsKleinian G) {Γ₁ Γ₂ : Subgroup G} (h : Subgroup.Commensurable Γ₁ Γ₂)
+    {F₁ F₂ : Set H3} (hF₁ : IsFundamentalDomain Γ₁ F₁ hvol)
+    (hF₂ : IsFundamentalDomain Γ₂ F₂ hvol) {v₁ v₂ : ℝ}
+    (hv₁ : hvol F₁ = ENNReal.ofReal v₁) (hv₂ : hvol F₂ = ENNReal.ofReal v₂)
+    (h₁ : 0 < v₁) (h₂ : 0 < v₂) : ∃ q : ℚ, v₁ = q * v₂ := by
+  haveI : SMulInvariantMeasure G H3 hvol :=
+    ⟨fun g _ hs => (hG.measure_preserving g).measure_preimage hs.nullMeasurableSet⟩
+  haveI : MeasurableConstSMul G H3 := ⟨fun g => (hG.measure_preserving g).measurable⟩
+  haveI : Countable G :=
+    countable_of_properlyDiscontinuous basepoint hG.properly_discontinuous
+  obtain ⟨q, hq, hqv⟩ := exists_rat_measure_eq h hF₁ hF₂
+  refine ⟨q, ?_⟩
+  rw [hv₁, hv₂, ← ENNReal.ofReal_mul (by positivity)] at hqv
+  exact (ENNReal.ofReal_eq_ofReal_iff h₁.le (by positivity)).1 hqv
 
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below

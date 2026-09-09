@@ -33,6 +33,14 @@ hyperbolic volume `1/2`, so `hvol`, which is built with `Measure.comap`, is not
 the zero measure (`hvol_ne_zero`). Nothing else in the bundle evaluates `hvol`
 on a concrete set.
 
+**Commensurability.** `hvol_ratio_rational_of_commensurable` — subgroups of one
+Kleinian group with a common finite-index subgroup have quotients of rationally
+related volume: Milestone 1 applied twice to one fundamental domain for the
+intersection. This is the source of every known rational relation in
+`hyperbolicVolumes`; the question is whether it is the only one. The general
+form, `relIndex_smul_measure_eq`, holds for any countable group acting on any
+measure space with an invariant measure.
+
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
 `thurston_question_23_strong`.

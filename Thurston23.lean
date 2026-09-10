@@ -5,12 +5,13 @@ Definition bundle and statements for a Prove2Me mission.
 
 Thurston's twenty-third question, from *Three-dimensional manifolds, Kleinian
 groups and hyperbolic geometry*, Bull. Amer. Math. Soc. **6** (1982), 357--381,
-asks whether the volumes of hyperbolic `3`-manifolds are rationally
-independent. Read literally the answer is no: a degree `n` cover has `n` times
-the volume, so commensurable manifolds always have rationally related volumes.
-The question as it is understood, and as it remains open, is whether the
-volumes are *not all* rationally related, that is whether some two of them have
-irrational ratio.
+reads on p. 380: "Show that volumes of hyperbolic 3-manifolds are not all
+rationally related." Some rational relations are forced: a degree `n` cover has
+`n` times the volume, so commensurable manifolds always have rationally related
+volumes. The question is whether those are the only ones, that is whether some
+two volumes have irrational ratio. (The paraphrase "are the volumes rationally
+independent?", found in secondary sources, is not Thurston's wording; read
+literally it is false for the reason just given.)
 
 The bundle below fixes the meaning of every word in that sentence. Hyperbolic
 `3`-space is the upper half-space; its volume is Lebesgue measure with density
@@ -1187,8 +1188,8 @@ theorem hyperbolicVolumes_nonempty : hyperbolicVolumes.Nonempty := by
 /-- **Thurston's Question 23.** The volumes of hyperbolic `3`-manifolds are not
 all rationally related: some two of them have irrational ratio.
 
-Read literally, "the volumes are rationally independent" is false, since a
-degree `n` cover has `n` times the volume (Milestone 1); the open question is
+This is Thurston's own wording (1982, p. 380). Rational relations do exist: a
+degree `n` cover has `n` times the volume (Milestone 1), so the question is
 whether every rational relation arises that way. It is not known how to exhibit
 a single pair of hyperbolic `3`-manifolds whose volumes have irrational ratio.
 For arithmetic examples Humbert's formula expresses the volume of the Bianchi

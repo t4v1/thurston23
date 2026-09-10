@@ -1,3 +1,4 @@
 .lake/
 credentials.json
 refs/
+.DS_Store

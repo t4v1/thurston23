@@ -10,12 +10,13 @@ as a [Prove2Me](https://prove2.me) mission.
   the goal.
 * `mission.md` — the mission description as submitted to the platform.
 
-**The question.** Thurston asked whether the volumes of hyperbolic
-`3`-manifolds are rationally independent. Literally the answer is no: a degree
-`n` cover has `n` times the volume. The open question is whether every rational
-relation between volumes arises from commensurability — equivalently, whether
-some two hyperbolic `3`-manifolds have irrational volume ratio. No such pair is
-known.
+**The question.** In Thurston's words (1982, p. 380): "Show that volumes of
+hyperbolic 3-manifolds are not all rationally related." Some rational relations
+are forced — a degree `n` cover has `n` times the volume — so the question is
+whether every rational relation arises from commensurability; equivalently,
+whether some two hyperbolic `3`-manifolds have irrational volume ratio. No such
+pair is known. (The paraphrase "are the volumes rationally independent?",
+common in secondary sources, is not Thurston's, and read literally is false.)
 
 **Milestones.**
 

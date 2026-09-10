@@ -2,17 +2,17 @@
 
 In the last of the twenty-four questions that closed his 1982 survey
 *Three-dimensional manifolds, Kleinian groups and hyperbolic geometry*
-(Bull. Amer. Math. Soc. **6** (1982), 357–381), Thurston asked whether the
-volumes of hyperbolic $3$-manifolds are rationally independent. Twenty-two of
+(Bull. Amer. Math. Soc. **6** (1982), 357–381), Thurston asked to "show that
+volumes of hyperbolic $3$-manifolds are not all rationally related" (p. 380). Twenty-two of
 the twenty-four have since been answered — geometrization by Perelman, tameness
 by Agol and by Calegari–Gabai, the ending lamination conjecture by
 Brock–Canary–Minsky, virtual fibering by Agol — and this one is among the two
 that remain open.
 
-Read literally the question has a negative answer, and for a trivial reason: a
+Some rational relations are forced, and for a trivial reason: a
 degree $n$ cover of a hyperbolic $3$-manifold has $n$ times its volume, so any
-two commensurable manifolds have rationally related volumes. The question as it
-is understood, and as it is open, is whether *every* rational relation arises
+two commensurable manifolds have rationally related volumes. The question, which
+remains open, is whether *every* rational relation arises
 that way — equivalently, whether some two hyperbolic $3$-manifolds have
 irrational volume ratio. Remarkably, not a single such pair is known.
 
@@ -48,8 +48,7 @@ them, $v$ and $w$, with $v \neq q w$ for every rational $q$.
 Two milestones support it. The first is that passing to a subgroup of index $n$
 multiplies the volume by $n$, a fundamental domain for the subgroup being the
 union of $n$ translates of one for the whole group; this is the source of every
-known rational relation, and it is what makes the literal reading of the
-question false. The second is that the set of volumes is nonempty — that some
+known rational relation, and it is why the question is phrased as it is. The second is that the set of volumes is nonempty — that some
 finite-volume hyperbolic $3$-manifold exists at all — without which the goal
 would be vacuously false rather than open.
 

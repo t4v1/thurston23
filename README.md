@@ -43,9 +43,11 @@ measure space with an invariant measure.
 
 **Toward Milestone 2.** `instMulActionSL2C` — `SL(2, ℂ)` acts on `ℍ³` by Möbius
 transformations, through the quaternion model `(x, y, t) ↦ x + y i + t j`. The
-action stays in the half-space precisely because `det = 1`, and it is by
-isometries of `hdist` (`hdist_smul`). Volume preservation and the Picard
-lattice are the remaining steps (see `PROBLEMS.md`).
+action stays in the half-space precisely because `det = 1`; it is by
+isometries of `hdist` (`hdist_smul`) and preserves `hvol`
+(`measurePreserving_smul`, via the Bruhat factorisation into translations,
+dilations and the inversion, each a change of variables). The Picard lattice
+and its fundamental domain are the remaining steps (see `PROBLEMS.md`).
 
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as

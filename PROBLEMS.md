@@ -18,7 +18,7 @@ Legend: `M` mission targets · `S` sanity and support theorems on the bundle ·
 together with `countable_of_properlyDiscontinuous`; no hypothesis was added
 to the published statement. Commit `cd0f0c4`.
 
-### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1, M2.2 done)**
+### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1–M2.3 done)**
 `hyperbolicVolumes_nonempty`. Needs a genuine lattice: `hyperbolicVolumes`
 demands finite *and* positive volume, so the trivial group (infinite
 volume) does not qualify. Chosen route: the Picard group `SL(2, ℤ[i])`, whose
@@ -39,9 +39,17 @@ Effort: months. Sub-problems, in order:
   (`mobius_sub_factor`), which needs only that the entries commute and
   `ad − bc = 1`; taking `normSq` gives `|gp − gq|² = |p − q|² / (D_p D_q)`
   (`normSq_mobius_sub`), and the `cosh` argument is invariant.
-- **M2.3 · Measure preservation** — `MeasurePreserving (g • ·) hvol hvol`.
-  Jacobian `1/D³` against a density transforming by `D³`; via
-  `lintegral_image_eq_lintegral_abs_det_fderiv_mul`. Heaviest analysis.
+- **M2.3 · Measure preservation** — **proved** (`measurePreserving_smul`).
+  Reduced to three generator families via the Bruhat factorisation
+  `g = T(a/c) · S · D(c) · T(d/c)` (`sl2_eq_of_ne_zero`); translations,
+  the linear maps `D a` (`det = |a|⁶`) and the inversion `S` (Jacobian
+  `invJac`, `det = |x|⁻⁶`, verified by `det_fin_three`) each go through one
+  change-of-variables lemma `hvol_image_smul`, with preimages under `g`
+  taken as images under `g⁻¹` (`measurePreserving_smul_of_image`) so no
+  preimage is ever computed. Two Mathlib wrinkles recorded in the source:
+  `ContinuousLinearMap.proj` must have its ring and family pinned or
+  elaboration times out, and `HasFDerivAt.inv` does not exist (use
+  `hasFDerivAt_inv` with `comp`).
 - **M2.4 · Proper discontinuity of `SL(2, ℤ[i])`** — discreteness of `ℤ[i]`
   in `ℂ` plus compactness.
 - **M2.5 · A torsion-free finite-index subgroup** — a principal congruence

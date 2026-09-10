@@ -41,6 +41,11 @@ intersection. This is the source of every known rational relation in
 form, `relIndex_smul_measure_eq`, holds for any countable group acting on any
 measure space with an invariant measure.
 
+**Toward Milestone 2.** `instMulActionSL2C` — `SL(2, ℂ)` acts on `ℍ³` by Möbius
+transformations, through the quaternion model `(x, y, t) ↦ x + y i + t j`. The
+action stays in the half-space precisely because `det = 1`. Isometry, volume
+preservation, and the Picard lattice are the remaining steps (see `PROBLEMS.md`).
+
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
 `thurston_question_23_strong`.

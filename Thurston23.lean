@@ -480,6 +480,171 @@ theorem hvol_ratio_rational_of_commensurable {G : Type} [Group G] [MulAction G H
   rw [hv₁, hv₂, ← ENNReal.ofReal_mul (by positivity)] at hqv
   exact (ENNReal.ofReal_eq_ofReal_iff h₁.le (by positivity)).1 hqv
 
+/-! ## Toward Milestone 2: the Möbius action of `SL(2, ℂ)`
+
+Milestone 2 needs a lattice, and every lattice comes from `PSL(2, ℂ)`. This section
+gives `ℍ³` its action by `SL(2, ℂ)`: the point `(x, y, t)` is the quaternion
+`x + y i + t j`, and `g = !![a, b; c, d]` acts by `q ↦ (a q + b)(c q + d)⁻¹`. Nothing
+here is hyperbolic geometry yet — isometry and volume preservation are the next
+sub-problems — but the action is what everything after it is stated about. -/
+
+section Mobius
+
+open MatrixGroups Quaternion
+
+/-- Mathlib's `Star ℍ[R]` instance is stated with the `Zero`, `One`, `Neg` arguments of
+`Quaternion R` derived from `[CommRing R]`, while `ℍ` elaborates them directly; instance
+search cannot unify the two while the ring instance is still a metavariable, so `star`
+fails to elaborate on `ℍ` in a fresh file. This is Mathlib's instance, restated. -/
+instance instStarH : Star ℍ := Quaternion.instStar
+
+/-! The point `(x, y, t)` of the upper half-space is the quaternion `x + y i + t j`, and
+`g = !![a, b; c, d]` acts by `q ↦ (a q + b)(c q + d)⁻¹`, with the complex entries
+embedded in the quaternions. The image has `k`-part `t · Im(det g)` and `j`-part
+`t · Re(det g)` before normalising, so `det g = 1` is exactly what keeps the action
+inside the half-space. The composition law is division-ring algebra: the complex
+entries sit to the left of `q` and commute among themselves. -/
+
+/-- The point `(x, y, t)` as the quaternion `x + y i + t j`. -/
+def toQ (p : H3) : ℍ := ⟨p.1 0, p.1 1, p.1 2, 0⟩
+
+theorem toQ_imK (p : H3) : (toQ p).imK = 0 := rfl
+
+theorem toQ_imJ_pos (p : H3) : 0 < (toQ p).imJ := p.2
+
+theorem toQ_injective : Function.Injective toQ := by
+  intro p q h
+  apply Subtype.ext
+  funext i
+  fin_cases i
+  · exact congrArg QuaternionAlgebra.re h
+  · exact congrArg QuaternionAlgebra.imI h
+  · exact congrArg QuaternionAlgebra.imJ h
+
+/-- The Möbius transformation `q ↦ (a q + b)(c q + d)⁻¹` on the quaternions. -/
+noncomputable def mobiusQ (g : SL(2, ℂ)) (q : ℍ) : ℍ :=
+  (((g 0 0 : ℂ) : ℍ) * q + ((g 0 1 : ℂ) : ℍ)) * ((((g 1 0 : ℂ) : ℍ) * q + ((g 1 1 : ℂ) : ℍ))⁻¹)
+
+theorem sl2_det (g : SL(2, ℂ)) : g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
+  have := Matrix.SpecialLinearGroup.det_coe (A := g)
+  rwa [Matrix.det_fin_two] at this
+
+theorem sl2_row_ne_zero (g : SL(2, ℂ)) : g 1 0 ≠ 0 ∨ g 1 1 ≠ 0 := by
+  by_contra h
+  push_neg at h
+  have hdet := sl2_det g
+  rw [h.1, h.2] at hdet
+  simp at hdet
+
+theorem normSq_pos {a : ℍ} (ha : a ≠ 0) : 0 < normSq a :=
+  lt_of_le_of_ne normSq_nonneg (Ne.symm (normSq_ne_zero.2 ha))
+
+/-- On the half-space the denominator never vanishes: its `j` and `k` parts are
+`c.re · t` and `c.im · t`. -/
+theorem denom_ne_zero {c d : ℂ} (hcd : c ≠ 0 ∨ d ≠ 0) {q : ℍ} (hK : q.imK = 0)
+    (hJ : 0 < q.imJ) : (c : ℍ) * q + (d : ℍ) ≠ 0 := by
+  intro h
+  by_cases hc : c = 0
+  · subst hc
+    have hd : d ≠ 0 := hcd.resolve_left (by simp)
+    apply hd
+    have hre := congrArg QuaternionAlgebra.re h
+    have him := congrArg QuaternionAlgebra.imI h
+    simp at hre him
+    exact Complex.ext hre him
+  · apply hc
+    have hJ' : ((c : ℍ) * q + (d : ℍ)).imJ = 0 := by rw [h]; rfl
+    have hK' : ((c : ℍ) * q + (d : ℍ)).imK = 0 := by rw [h]; rfl
+    simp [hK, hJ.ne'] at hJ' hK'
+    exact Complex.ext hJ' hK'
+
+/-- The key computation: numerator times conjugate denominator has `j`-part `t` and
+`k`-part `0`. This is where `det g = 1` enters. -/
+theorem num_mul_star_denom (g : SL(2, ℂ)) {q : ℍ} (hK : q.imK = 0) :
+    ((((g 0 0 : ℂ) : ℍ) * q + ((g 0 1 : ℂ) : ℍ)) *
+        star (((g 1 0 : ℂ) : ℍ) * q + ((g 1 1 : ℂ) : ℍ))).imJ = q.imJ ∧
+    ((((g 0 0 : ℂ) : ℍ) * q + ((g 0 1 : ℂ) : ℍ)) *
+        star (((g 1 0 : ℂ) : ℍ) * q + ((g 1 1 : ℂ) : ℍ))).imK = 0 := by
+  have hdet := sl2_det g
+  have hre := congrArg Complex.re hdet
+  have him := congrArg Complex.im hdet
+  simp at hre him
+  constructor
+  · simp [hK]
+    linear_combination q.imJ * hre
+  · simp [hK]
+    linear_combination q.imJ * him
+
+/-- The Möbius transformation preserves the half-space, scaling `t` by `1 / |c q + d|²`. -/
+theorem mobiusQ_imJ (g : SL(2, ℂ)) {q : ℍ} (hK : q.imK = 0) :
+    (mobiusQ g q).imJ = q.imJ / normSq (((g 1 0 : ℂ) : ℍ) * q + ((g 1 1 : ℂ) : ℍ)) ∧
+    (mobiusQ g q).imK = 0 := by
+  obtain ⟨h1, h2⟩ := num_mul_star_denom g hK
+  unfold mobiusQ
+  rw [Quaternion.inv_def, Algebra.mul_smul_comm]
+  constructor
+  · rw [Quaternion.imJ_smul, h1, smul_eq_mul, div_eq_inv_mul]
+  · rw [Quaternion.imK_smul, h2, smul_zero]
+
+/-- The Möbius action of `SL(2, ℂ)` on the upper half-space model. -/
+noncomputable instance instSMulSL2C : SMul SL(2, ℂ) H3 where
+  smul g p := ⟨![(mobiusQ g (toQ p)).re, (mobiusQ g (toQ p)).imI, (mobiusQ g (toQ p)).imJ], by
+    show 0 < (mobiusQ g (toQ p)).imJ
+    rw [(mobiusQ_imJ g (toQ_imK p)).1]
+    exact div_pos p.2 (normSq_pos (denom_ne_zero (sl2_row_ne_zero g) (toQ_imK p) p.2))⟩
+
+theorem mobius_smul_def (g : SL(2, ℂ)) (p : H3) : (g • p).1 =
+    ![(mobiusQ g (toQ p)).re, (mobiusQ g (toQ p)).imI, (mobiusQ g (toQ p)).imJ] := rfl
+
+theorem toQ_smul (g : SL(2, ℂ)) (p : H3) : toQ (g • p) = mobiusQ g (toQ p) := by
+  have h2 := (mobiusQ_imJ g (toQ_imK p)).2
+  refine QuaternionAlgebra.ext ?_ ?_ ?_ ?_
+  · rfl
+  · rfl
+  · rfl
+  · exact h2.symm
+
+/-- Composition of linear fractional maps, in any division ring, with the coefficients on
+the left. Only the inner denominator needs to be nonzero. -/
+theorem lf_comp {K : Type*} [DivisionRing K] (a₁ b₁ c₁ d₁ N M : K) (hM : M ≠ 0) :
+    (a₁ * (N * M⁻¹) + b₁) * (c₁ * (N * M⁻¹) + d₁)⁻¹ =
+      (a₁ * N + b₁ * M) * (c₁ * N + d₁ * M)⁻¹ := by
+  have e1 : a₁ * (N * M⁻¹) + b₁ = (a₁ * N + b₁ * M) * M⁻¹ := by
+    rw [add_mul, mul_assoc, mul_assoc, mul_inv_cancel₀ hM, mul_one]
+  have e2 : c₁ * (N * M⁻¹) + d₁ = (c₁ * N + d₁ * M) * M⁻¹ := by
+    rw [add_mul, mul_assoc, mul_assoc, mul_inv_cancel₀ hM, mul_one]
+  rw [e1, e2, mul_inv_rev, inv_inv, mul_assoc, ← mul_assoc M⁻¹, inv_mul_cancel₀ hM, one_mul]
+
+theorem mobiusQ_mul (g₁ g₂ : SL(2, ℂ)) {q : ℍ}
+    (hM : ((g₂ 1 0 : ℂ) : ℍ) * q + ((g₂ 1 1 : ℂ) : ℍ) ≠ 0) :
+    mobiusQ g₁ (mobiusQ g₂ q) = mobiusQ (g₁ * g₂) q := by
+  unfold mobiusQ
+  rw [lf_comp _ _ _ _ _ _ hM]
+  have hn : ((g₁ 0 0 : ℂ) : ℍ) * (((g₂ 0 0 : ℂ) : ℍ) * q + ((g₂ 0 1 : ℂ) : ℍ)) +
+      ((g₁ 0 1 : ℂ) : ℍ) * (((g₂ 1 0 : ℂ) : ℍ) * q + ((g₂ 1 1 : ℂ) : ℍ)) =
+      (((g₁ * g₂) 0 0 : ℂ) : ℍ) * q + (((g₁ * g₂) 0 1 : ℂ) : ℍ) := by
+    simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two,
+      coeComplex_add, coeComplex_mul]
+    noncomm_ring
+  have hd : ((g₁ 1 0 : ℂ) : ℍ) * (((g₂ 0 0 : ℂ) : ℍ) * q + ((g₂ 0 1 : ℂ) : ℍ)) +
+      ((g₁ 1 1 : ℂ) : ℍ) * (((g₂ 1 0 : ℂ) : ℍ) * q + ((g₂ 1 1 : ℂ) : ℍ)) =
+      (((g₁ * g₂) 1 0 : ℂ) : ℍ) * q + (((g₁ * g₂) 1 1 : ℂ) : ℍ) := by
+    simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two,
+      coeComplex_add, coeComplex_mul]
+    noncomm_ring
+  rw [hn, hd]
+
+noncomputable instance instMulActionSL2C : MulAction SL(2, ℂ) H3 where
+  one_smul p := toQ_injective (by
+    rw [toQ_smul]
+    unfold mobiusQ
+    simp [Matrix.SpecialLinearGroup.coe_one])
+  mul_smul g₁ g₂ p := toQ_injective (by
+    rw [toQ_smul, toQ_smul, toQ_smul]
+    exact (mobiusQ_mul g₁ g₂ (denom_ne_zero (sl2_row_ne_zero g₂) (toQ_imK p) p.2)).symm)
+
+end Mobius
+
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below
 would be vacuously false rather than open. This is not a warm-up: it asks for a

@@ -195,14 +195,15 @@ Multi-year.
 
 ## D — Documentation
 
-### D1 · The docstring misquotes Thurston — **open, low priority**
+### D1 · The docstring misquotes Thurston — **fixed in the repo** (`7b077a1`); platform copy still pending
 Module docstring, `README.md`, and `mission.md` say Thurston asked whether
 volumes are "rationally independent" and then correct that reading. His
 actual wording (BAMS 1982, p. 380, `refs/`) is *"not all rationally
 related"* — the paraphrase is Wikipedia's. The Lean statements are faithful.
-Editing the published definition item resets its Prove2Me confirmation, so
-fix the repo prose now and the platform text only when something else forces
-a re-audit.
+Fixed in the module docstring, the goal docstring, the README and
+`mission.md`. The copy of `mission.md` on Prove2Me still carries the old
+wording; editing the published item resets its confirmation, so that waits
+for the next forced re-audit.
 
 ---
 

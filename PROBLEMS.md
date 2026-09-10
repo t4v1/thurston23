@@ -18,7 +18,7 @@ Legend: `M` mission targets · `S` sanity and support theorems on the bundle ·
 together with `countable_of_properlyDiscontinuous`; no hypothesis was added
 to the published statement. Commit `cd0f0c4`.
 
-### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1 done)**
+### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1, M2.2 done)**
 `hyperbolicVolumes_nonempty`. Needs a genuine lattice: `hyperbolicVolumes`
 demands finite *and* positive volume, so the trivial group (infinite
 volume) does not qualify. Chosen route: the Picard group `SL(2, ℤ[i])`, whose
@@ -34,8 +34,11 @@ Effort: months. Sub-problems, in order:
   `imJ = t / D`, `D = |cz+d|² + |c|²t²` — this is where `det = 1` is used;
   `MulAction` laws by division-ring algebra (the complex entries sit to the
   left of `q` and commute among themselves). Transport to `H3 ≃ UHS`.
-- **M2.2 · Isometry** — `hdist (g • p) (g • q) = hdist p q`. Computation on
-  the `cosh` formula.
+- **M2.2 · Isometry** — **proved** (`hdist_smul`). Via the two-sided
+  factorisation `(p c + d)(g p − g q)(c q + d) = p − q` in the quaternions
+  (`mobius_sub_factor`), which needs only that the entries commute and
+  `ad − bc = 1`; taking `normSq` gives `|gp − gq|² = |p − q|² / (D_p D_q)`
+  (`normSq_mobius_sub`), and the `cosh` argument is invariant.
 - **M2.3 · Measure preservation** — `MeasurePreserving (g • ·) hvol hvol`.
   Jacobian `1/D³` against a density transforming by `D³`; via
   `lintegral_image_eq_lintegral_abs_det_fderiv_mul`. Heaviest analysis.

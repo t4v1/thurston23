@@ -645,6 +645,119 @@ noncomputable instance instMulActionSL2C : MulAction SL(2, ℂ) H3 where
 
 end Mobius
 
+/-! ## Toward Milestone 2: the action is by isometries
+
+`hdist` is `arcosh` of `1 + |p − q|² / (2 p₃ q₃)`. Under `g` the height `p₃` is divided by
+`D_p = |c p + d|²`, and the squared distance `|p − q|²` is divided by `D_p D_q`, so the
+quotient is unchanged. The second fact is the two-sided factorisation
+`(p c + d)(g p − g q)(c q + d) = p − q` in the quaternions — `c` to the right of `p` on the
+left factor — which needs only that the complex entries commute among themselves and
+that `ad − bc = 1`; taking norms, nothing is ever inverted. -/
+
+section Isometry
+
+open MatrixGroups Quaternion
+
+/-- The argument of `arcosh` in `hdist`. -/
+noncomputable def coshDist (p q : H3) : ℝ :=
+  1 + (∑ i, (p.1 i - q.1 i) ^ 2) / (2 * p.1 2 * q.1 2)
+
+theorem hdist_eq_log_coshDist (p q : H3) :
+    hdist p q = Real.log (coshDist p q + Real.sqrt (coshDist p q ^ 2 - 1)) := rfl
+
+theorem sum_sq_sub_eq_normSq (p q : H3) :
+    ∑ i, (p.1 i - q.1 i) ^ 2 = normSq (toQ p - toQ q) := by
+  rw [normSq_def', Fin.sum_univ_three]
+  simp [toQ]
+
+/-- `P c + d` and `c P + d` differ only in the sign of the `k`-part when `P.imK = 0`. -/
+theorem normSq_mul_coe_add (c d : ℂ) {P : ℍ} (hK : P.imK = 0) :
+    normSq (P * (c : ℍ) + (d : ℍ)) = normSq ((c : ℍ) * P + (d : ℍ)) := by
+  simp [normSq_def', hK]
+  ring
+
+/-- The two-sided factorisation behind the invariance of the distance. -/
+theorem mobius_sub_factor (g : SL(2, ℂ)) {P Q : ℍ}
+    (hMP : ((g 1 0 : ℂ) : ℍ) * P + ((g 1 1 : ℂ) : ℍ) ≠ 0)
+    (hMQ : ((g 1 0 : ℂ) : ℍ) * Q + ((g 1 1 : ℂ) : ℍ) ≠ 0) :
+    (P * ((g 1 0 : ℂ) : ℍ) + ((g 1 1 : ℂ) : ℍ)) * (mobiusQ g P - mobiusQ g Q) *
+        (((g 1 0 : ℂ) : ℍ) * Q + ((g 1 1 : ℂ) : ℍ)) = P - Q := by
+  unfold mobiusQ
+  set A : ℍ := ((g 0 0 : ℂ) : ℍ) with hA
+  set B : ℍ := ((g 0 1 : ℂ) : ℍ) with hB
+  set C : ℍ := ((g 1 0 : ℂ) : ℍ) with hC
+  set D : ℍ := ((g 1 1 : ℂ) : ℍ) with hD
+  have comm : ∀ x y : ℂ, (x : ℍ) * (y : ℍ) = (y : ℍ) * (x : ℍ) := fun x y => by
+    rw [← coeComplex_mul, ← coeComplex_mul, mul_comm]
+  have hCA : C * A = A * C := comm _ _
+  have hCB : C * B = B * C := comm _ _
+  have hDB : D * B = B * D := comm _ _
+  have hDA' : D * A = A * D := comm _ _
+  have hAD : A * D = 1 + B * C := by
+    have h := sl2_det g
+    rw [sub_eq_iff_eq_add] at h
+    have h' := congrArg (fun z : ℂ => (z : ℍ)) h
+    simp only [coeComplex_add, coeComplex_mul, coeComplex_one] at h'
+    rw [hA, hD, hB, hC, h', add_comm]
+  have hDA : D * A = 1 + B * C := by rw [hDA', hAD]
+  have e1 : (P * C + D) * (A * P + B) = (P * A + B) * (C * P + D) := by
+    calc (P * C + D) * (A * P + B)
+        = P * (C * A) * P + P * (C * B) + (D * A) * P + D * B := by noncomm_ring
+      _ = P * (A * C) * P + P * (B * C) + (1 + B * C) * P + B * D := by
+          rw [hCA, hCB, hDA, hDB]
+      _ = P * (A * C) * P + P * (1 + B * C) + (B * C) * P + B * D := by noncomm_ring
+      _ = P * (A * C) * P + P * (A * D) + (B * C) * P + B * D := by rw [hAD]
+      _ = (P * A + B) * (C * P + D) := by noncomm_ring
+  have e2 : (P * A + B) * (C * Q + D) - (P * C + D) * (A * Q + B) = P - Q := by
+    calc (P * A + B) * (C * Q + D) - (P * C + D) * (A * Q + B)
+        = P * (A * C) * Q + P * (A * D) + (B * C) * Q + B * D
+            - (P * (C * A) * Q + P * (C * B) + (D * A) * Q + D * B) := by noncomm_ring
+      _ = P * (A * C) * Q + P * (1 + B * C) + (B * C) * Q + B * D
+            - (P * (A * C) * Q + P * (B * C) + (1 + B * C) * Q + B * D) := by
+          rw [hAD, hCA, hCB, hDA, hDB]
+      _ = P - Q := by noncomm_ring
+  calc (P * C + D) * ((A * P + B) * (C * P + D)⁻¹ - (A * Q + B) * (C * Q + D)⁻¹) * (C * Q + D)
+      = ((P * C + D) * (A * P + B)) * (C * P + D)⁻¹ * (C * Q + D)
+          - (P * C + D) * (A * Q + B) * ((C * Q + D)⁻¹ * (C * Q + D)) := by noncomm_ring
+    _ = (P * A + B) * (C * P + D) * (C * P + D)⁻¹ * (C * Q + D)
+          - (P * C + D) * (A * Q + B) * 1 := by rw [e1, inv_mul_cancel₀ hMQ]
+    _ = (P * A + B) * (C * Q + D) - (P * C + D) * (A * Q + B) := by
+          rw [mul_inv_cancel_right₀ hMP, mul_one]
+    _ = P - Q := e2
+
+/-- `|g P − g Q|² = |P − Q|² / (|c P + d|² · |c Q + d|²)`. -/
+theorem normSq_mobius_sub (g : SL(2, ℂ)) {P Q : ℍ} (hKP : P.imK = 0) (hKQ : Q.imK = 0)
+    (hJP : 0 < P.imJ) (hJQ : 0 < Q.imJ) :
+    normSq (mobiusQ g P - mobiusQ g Q) =
+      normSq (P - Q) / (normSq (((g 1 0 : ℂ) : ℍ) * P + ((g 1 1 : ℂ) : ℍ)) *
+        normSq (((g 1 0 : ℂ) : ℍ) * Q + ((g 1 1 : ℂ) : ℍ))) := by
+  have hMP := denom_ne_zero (sl2_row_ne_zero g) hKP hJP
+  have hMQ := denom_ne_zero (sl2_row_ne_zero g) hKQ hJQ
+  have key := congrArg normSq (mobius_sub_factor g hMP hMQ)
+  rw [map_mul, map_mul, normSq_mul_coe_add _ _ hKP] at key
+  rw [eq_div_iff (mul_ne_zero (normSq_ne_zero.2 hMP) (normSq_ne_zero.2 hMQ)), ← key]
+  ring
+
+theorem coshDist_smul (g : SL(2, ℂ)) (p q : H3) : coshDist (g • p) (g • q) = coshDist p q := by
+  unfold coshDist
+  rw [sum_sq_sub_eq_normSq, sum_sq_sub_eq_normSq, toQ_smul, toQ_smul]
+  rw [show (g • p).1 2 = (mobiusQ g (toQ p)).imJ from rfl,
+    show (g • q).1 2 = (mobiusQ g (toQ q)).imJ from rfl,
+    (mobiusQ_imJ g (toQ_imK p)).1, (mobiusQ_imJ g (toQ_imK q)).1,
+    normSq_mobius_sub g (toQ_imK p) (toQ_imK q) p.2 q.2,
+    show (toQ p).imJ = p.1 2 from rfl, show (toQ q).imJ = q.1 2 from rfl]
+  have h1 := (normSq_pos (denom_ne_zero (sl2_row_ne_zero g) (toQ_imK p) p.2)).ne'
+  have h2 := (normSq_pos (denom_ne_zero (sl2_row_ne_zero g) (toQ_imK q) q.2)).ne'
+  have hp : p.1 2 ≠ 0 := p.2.ne'
+  have hq : q.1 2 ≠ 0 := q.2.ne'
+  field_simp
+
+/-- **M2.2.** The Möbius action of `SL(2, ℂ)` is by isometries of `hdist`. -/
+theorem hdist_smul (g : SL(2, ℂ)) (p q : H3) : hdist (g • p) (g • q) = hdist p q := by
+  rw [hdist_eq_log_coshDist, hdist_eq_log_coshDist, coshDist_smul]
+
+end Isometry
+
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below
 would be vacuously false rather than open. This is not a warm-up: it asks for a

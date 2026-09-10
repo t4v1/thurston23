@@ -50,17 +50,47 @@ Effort: months. Sub-problems, in order:
   `ContinuousLinearMap.proj` must have its ring and family pinned or
   elaboration times out, and `HasFDerivAt.inv` does not exist (use
   `hasFDerivAt_inv` with `comp`).
-- **M2.4 · Proper discontinuity of `SL(2, ℤ[i])`** — discreteness of `ℤ[i]`
-  in `ℂ` plus compactness.
-- **M2.5 · A torsion-free finite-index subgroup** — a principal congruence
-  subgroup `Γ(𝔞)` of level coprime to `2` and `3` (e.g. `𝔞 = (2+i)`); trace
-  argument. Must not contain `−I`, which acts trivially.
-- **M2.6 · A fundamental domain of finite positive volume** — for the Picard
-  group modulo `±I` (the L4 trap: a group with `−I` has no fundamental domain
-  in Mathlib's sense). Then `Γ(𝔞)`'s domain is the coset union via
-  `isFundamentalDomain_iUnion_out`, with volume `index × vol` by
-  `measure_eq_index_smul`. This is the reduction theory and the long pole.
-- **M2.7 · Assemble** `hyperbolicVolumes_nonempty` from M2.1–M2.6.
+- **M2.4 · The Picard group and proper discontinuity** — open. Define
+  `SL(2, ℤ[i])` as the subgroup of `SL(2, ℂ)` with entries in the image of
+  `GaussianInt.toComplex` (closed under inverse since the inverse is the
+  adjugate). Proper discontinuity: for `q` in a compact `K` (heights in
+  `[t₀, T]`, `|z| ≤ R`), `g q ∈ K` forces `|c q + d|² ≤ T/t₀`, which bounds
+  `c` then `d`; applying the same to `g⁻¹ = !![d, -b; -c, a]` bounds `a`,
+  and `b` follows from the determinant (or from the translation part when
+  `c = 0`). Finitely many Gaussian integers in a disc. ~200 lines.
+- **M2.5 · A torsion-free finite-index subgroup** — open. Use the principal
+  congruence subgroup `Γ(2+i)` (level of norm 5). Freeness: if `g p = p`
+  then the `j`-component of `a p + b = p (c p + d)` gives
+  `a = 2 Re(c z) + conj d`, so `tr g = 2 Re(c z + d)` is real, and height
+  preservation gives `|c z + d|² + |c|² t² = 1`, so `|tr g| ≤ 2`. Hence
+  `tr g ∈ {−2, …, 2} ⊂ ℤ`, while `tr g ≡ 2 (mod 2+i)`; `tr − 2 ∈ {−4, …, 0}`
+  has norm `≤ 16` and only `0` is divisible by `2+i`, so `tr g = 2`, which
+  with `|c z + d| = 1` forces `c = 0`, `g = ±T(b)`, then `b = 0` and `g = I`
+  (`−I ∉ Γ(2+i)` since `2 ∉ (2+i)`). Finite index: `Γ(𝔞)` is the kernel of
+  reduction mod `𝔞`, `ℤ[i]/𝔞` finite. ~250 lines.
+- **M2.6 · A fundamental domain of finite positive volume** — open; the long
+  pole. Big group: `PSL(2, ℤ[i]) := SL(2, ℤ[i]) ⧸ {±I}`, acting through
+  `Quotient.lift` since `−I` acts trivially (the L4 trap). Domain: the
+  folded box `B⁺ = {0 ≤ Re z ≤ ½, |Im z| ≤ ½, |z|² + t² ≥ 1}`; the fold by
+  `z ↦ −z` is the element `diag(i, −i)`, which is why the unfolded box is
+  *not* a fundamental domain for the Picard group. Sub-steps:
+  (i) discreteness — `(c, d) ↦ |c z + d|² + |c|² t²` tends to `∞` on
+  `ℤ[i]²`, so the orbit has a point of maximal height (Modular.lean's
+  `exists_max_im`); (ii) covering — translate `z` into the box, fold, and
+  if `|q| < 1` apply `S`, which raises the height, contradicting maximality;
+  (iii) uniqueness on the interior — if `q, g q ∈ B⁺°` then `g = 1`: WLOG
+  `|c q + d| ≤ 1`, and `t² > 1 − |z|² > ½` forces `|c|² < 2`; `c = 0` gives
+  a translation or `z ↦ −z + b`, neither of which meets the open half-box;
+  `c` a unit gives `|z − w|² < |z|²` for a Gaussian integer `w ≠ 0`, impossible
+  for `0 < Re z < ½`, `|Im z| < ½`; (iv) the boundary is `hvol`-null — planes
+  and a sphere, `hvol ≪ volume`; (v) `hvol B⁺ ≤ ∫₀^{½}∫_{−½}^{½}∫_{1/√2}^∞ t⁻³ < ∞`
+  and `> 0`; (vi) transport: `Γ(2+i)` injects into `PSL`, its image has
+  finite index, `isFundamentalDomain_iUnion_out` gives the domain, and
+  `measure_eq_index_smul` its volume `index × hvol B⁺`, finite and positive.
+  ~800 lines.
+- **M2.7 · Assemble** `hyperbolicVolumes_nonempty` from M2.1–M2.6: `IsKleinian`
+  for `Γ(2+i)` is M2.2 (isometry), M2.3 (measure preservation), M2.5
+  (freeness), M2.4 restricted to a subgroup (proper discontinuity). ~50 lines.
 
 ### M3 · Goal — some two volumes have irrational ratio — **open mathematics**
 `thurston_question_23`, `thurston_question_23_strong`. Not a formalization

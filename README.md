@@ -27,7 +27,8 @@ common in secondary sources, is not Thurston's, and read literally is false.)
    countability of a Kleinian group, which follows from proper discontinuity
    (`countable_of_properlyDiscontinuous`) rather than being assumed.
 2. `hyperbolicVolumes_nonempty` — at least one finite-volume hyperbolic
-   `3`-manifold exists, so the goal is not vacuous.
+   `3`-manifold exists, so the goal is not vacuous. **Proved**, with the
+   congruence subgroup `Γ(2 + i)` of the Picard group; see below.
 
 **Sanity check.** `hvol_cusp_box` — the unit cusp box `[0,1]² × [1,∞)` has
 hyperbolic volume `1/2`, so `hvol`, which is built with `Measure.comap`, is not
@@ -42,7 +43,7 @@ intersection. This is the source of every known rational relation in
 form, `relIndex_smul_measure_eq`, holds for any countable group acting on any
 measure space with an invariant measure.
 
-**Toward Milestone 2.** `instMulActionSL2C` — `SL(2, ℂ)` acts on `ℍ³` by Möbius
+**Milestone 2.** `instMulActionSL2C` — `SL(2, ℂ)` acts on `ℍ³` by Möbius
 transformations, through the quaternion model `(x, y, t) ↦ x + y i + t j`. The
 action stays in the half-space precisely because `det = 1`; it is by
 isometries of `hdist` (`hdist_smul`) and preserves `hvol`
@@ -55,9 +56,16 @@ The congruence subgroup `gammaTwoI = Γ(2 + i)` has finite index in it
 (`relIndex_gammaTwoI_picard`) and acts freely (`gammaTwoI_free`): a fixed
 point forces the trace to be real of absolute value at most `2`, and the only
 such Gaussian integer congruent to `2` modulo `2 + i` is `2`, which forces
-`g = 1`. So `isKleinian_gammaTwoI` — the first inhabitant of `IsKleinian`. A
-fundamental domain of finite positive volume is the remaining step (see
-`PROBLEMS.md`).
+`g = 1`. So `isKleinian_gammaTwoI` — the first inhabitant of `IsKleinian`.
+Its fundamental domain is not written down: a free, properly discontinuous
+action by homeomorphisms has a measurable one (`exists_isFundamentalDomain`,
+Mathlib does not have it), of volume at most that of any set meeting every
+orbit. Reduction theory for the Picard group (`exists_smul_mem_picardBox`:
+maximise the height on the orbit, translate into `|x|, |y| ≤ ½`, and `|q| ≥ 1`
+or else the inversion would raise the height) gives such a set: one translate
+of the box per coset of `Γ(2 + i)`, finitely many. The box lies above height
+`½`, so its volume is finite; `hvol ≠ 0` makes the domain's volume positive
+(`exists_fundamentalDomain_gammaTwoI`).
 
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
@@ -79,6 +87,5 @@ mkdir -p .lake && ln -s "$PWD/../mathlib4-thurston/.lake/packages" .lake/package
 lake env lean Thurston23.lean
 ```
 
-Only the `sorry` warnings on the three open targets should appear:
-`hyperbolicVolumes_nonempty`, `thurston_question_23` and
-`thurston_question_23_strong`.
+Only the `sorry` warnings on the two open targets should appear:
+`thurston_question_23` and `thurston_question_23_strong`.

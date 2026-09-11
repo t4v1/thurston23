@@ -18,14 +18,15 @@ Legend: `M` mission targets · `S` sanity and support theorems on the bundle ·
 together with `countable_of_properlyDiscontinuous`; no hypothesis was added
 to the published statement. Commit `cd0f0c4`.
 
-### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1–M2.5 done)**
-`hyperbolicVolumes_nonempty`. Needs a genuine lattice: `hyperbolicVolumes`
+### M2 · Milestone 2 — the set of volumes is nonempty — **proved**
+`hyperbolicVolumes_nonempty`, axiom-clean, with no change to the published
+statement. Needs a genuine lattice: `hyperbolicVolumes`
 demands finite *and* positive volume, so the trivial group (infinite
-volume) does not qualify. Chosen route: the Picard group `SL(2, ℤ[i])`, whose
-reduction theory is the Euclidean algorithm in `ℤ[i]` — the 3-dimensional
-analogue of `Mathlib/NumberTheory/Modular.lean`. Everything is done inside
-the bundle's own `H3`; the Mathlib ladder (L5–L8) is not a prerequisite.
-Effort: months. Sub-problems, in order:
+volume) does not qualify. Route taken: the congruence subgroup `Γ(2+i)` of the
+Picard group `SL(2, ℤ[i])`, whose reduction theory is the Euclidean algorithm
+in `ℤ[i]` — the 3-dimensional analogue of `Mathlib/NumberTheory/Modular.lean`.
+Everything is done inside the bundle's own `H3`; the Mathlib ladder (L5–L8)
+was not a prerequisite. Sub-problems, in order (about 900 lines in all):
 
 - **M2.1 · Möbius action of `SL(2, ℂ)` on `H3`** — **proved** (`instMulActionSL2C`).
   Model `H3` inside the quaternions as `{q | q.imK = 0 ∧ 0 < q.imJ}` via
@@ -76,29 +77,35 @@ Effort: months. Sub-problems, in order:
   `tr g` real in `[−2, 2]`, and `tr g = 2 ⇒ g = 1` directly — no `±` case
   split: `tr − 2 ≡ 0 (mod 2+i)` with `tr − 2 ∈ [−4, 0]` already excludes
   `−I` (`eq_two_of_sub_two_mem`). ~250 lines.
-- **M2.6 · A fundamental domain of finite positive volume** — open; the long
-  pole. Big group: `PSL(2, ℤ[i]) := SL(2, ℤ[i]) ⧸ {±I}`, acting through
-  `Quotient.lift` since `−I` acts trivially (the L4 trap). Domain: the
-  folded box `B⁺ = {0 ≤ Re z ≤ ½, |Im z| ≤ ½, |z|² + t² ≥ 1}`; the fold by
-  `z ↦ −z` is the element `diag(i, −i)`, which is why the unfolded box is
-  *not* a fundamental domain for the Picard group. Sub-steps:
-  (i) discreteness — `(c, d) ↦ |c z + d|² + |c|² t²` tends to `∞` on
-  `ℤ[i]²`, so the orbit has a point of maximal height (Modular.lean's
-  `exists_max_im`); (ii) covering — translate `z` into the box, fold, and
-  if `|q| < 1` apply `S`, which raises the height, contradicting maximality;
-  (iii) uniqueness on the interior — if `q, g q ∈ B⁺°` then `g = 1`: WLOG
-  `|c q + d| ≤ 1`, and `t² > 1 − |z|² > ½` forces `|c|² < 2`; `c = 0` gives
-  a translation or `z ↦ −z + b`, neither of which meets the open half-box;
-  `c` a unit gives `|z − w|² < |z|²` for a Gaussian integer `w ≠ 0`, impossible
-  for `0 < Re z < ½`, `|Im z| < ½`; (iv) the boundary is `hvol`-null — planes
-  and a sphere, `hvol ≪ volume`; (v) `hvol B⁺ ≤ ∫₀^{½}∫_{−½}^{½}∫_{1/√2}^∞ t⁻³ < ∞`
-  and `> 0`; (vi) transport: `Γ(2+i)` injects into `PSL` (its only element
-  acting trivially is `1`, by `gammaTwoI_free`), its image has
-  finite index (`relIndex_gammaTwoI_picard`), `isFundamentalDomain_iUnion_out`
-  gives the domain, and `measure_eq_index_smul` its volume
-  `index × hvol B⁺`, finite and positive. ~800 lines.
-- **M2.7 · Assemble** `hyperbolicVolumes_nonempty` from `isKleinian_gammaTwoI`
-  and M2.6's fundamental domain for `gammaTwoI`. ~20 lines.
+- **M2.6 · A fundamental domain of finite positive volume** — **proved**
+  (`exists_fundamentalDomain_gammaTwoI`), ~330 lines, by a shorter route than
+  planned: no explicit domain, no `PSL(2, ℤ[i])`, no uniqueness geometry, no
+  null boundary. The planned route (the folded box `B⁺` as a strict
+  fundamental domain for `PSL`, then transport) stays recorded in git history;
+  only its covering half was needed.
+  (i) *Existence* (`exists_isFundamentalDomain`, general): a free, properly
+  discontinuous action by homeomorphisms of a second countable, locally
+  compact Hausdorff space has a measurable fundamental domain. Each point has
+  a neighbourhood no `g ≠ 1` maps into itself (`exists_nhds_smul_notMem`:
+  a compact neighbourhood meets only finitely many of its translates, and
+  Hausdorff separation handles those); countably many such open sets `U n`
+  cover; keep a point of `U n` when its orbit misses every `U m`, `m < n`.
+  (ii) *Upper bound* (`measure_le_of_forall_exists_smul_mem`): a fundamental
+  domain has at most the measure of any set meeting every orbit, via
+  Mathlib's `measure_eq_tsum`.
+  (iii) *Reduction* (`exists_smul_mem_picardBox`): heights on a Picard orbit
+  that are at least the starting one are `t / |c q + d|²` with finitely many
+  Gaussian `(c, d)` (`finite_heights`), so a maximal one exists; translate it
+  into `|x|, |y| ≤ ½`; then `|q| ≥ 1`, else `S` raises the height.
+  (iv) *Finite volume*: the box lies above height `½` (`picardBox_subset`) and
+  `[-½, ½]² × [½, ∞)` has finite `hvol` (`hvol_tallBox_lt_top`, the
+  cusp-box computation without evaluating the integral); one translate per
+  coset of `Γ(2+i)` in `picard` meets every `Γ(2+i)`-orbit, and there are
+  finitely many cosets (`relIndex_gammaTwoI_picard`).
+  (v) *Positive volume*: Mathlib's `IsFundamentalDomain.measure_ne_zero` with
+  `hvol_ne_zero`.
+- **M2.7 · Assemble** — **proved**: `hyperbolicVolumes_nonempty` from
+  `isKleinian_gammaTwoI` and M2.6, with `v = (hvol F).toReal`.
 
 ### M3 · Goal — some two volumes have irrational ratio — **open mathematics**
 `thurston_question_23`, `thurston_question_23_strong`. Not a formalization
@@ -164,6 +171,15 @@ Upstream API note: newer Mathlib makes `Commensurable` a pair of
 `Topology/Algebra/ProperAction/ProperlyDiscontinuous.lean`. Open work:
 restate against Mathlib's two-compact `ProperlyDiscontinuousSMul` class
 (equivalent: apply the one-compact form to `K ∪ L`).
+
+The same PR can carry `exists_isFundamentalDomain` (with
+`exists_nhds_smul_notMem`) — a free, properly discontinuous action by
+homeomorphisms of a second countable, locally compact Hausdorff space has a
+measurable fundamental domain — and `measure_le_of_forall_exists_smul_mem`
+(a fundamental domain has at most the measure of any set meeting every
+orbit), both proved in M2.6. Mathlib has neither; with
+`ProperlyDiscontinuousSMul` and `ContinuousConstSMul` in place of the explicit
+hypotheses they are general-purpose.
 
 ### L3 · Hyperbolic measure on ℍ² — **open**
 `UpperHalfPlane.volume := dx dy / y²` and `SMulInvariantMeasure SL(2,ℝ) ℍ`.

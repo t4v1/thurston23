@@ -35,12 +35,16 @@ be vacuous. Milestone 1 is proved below, from a general fact about fundamental
 domains of a finite-index subgroup that Mathlib does not have, and `hvol` is
 checked against one explicit value, the volume of a cusp box. The positive half of
 Thurston's framing is also proved: commensurable subgroups of a Kleinian group
-have rationally related volumes. Toward Milestone 2, `SL(2, ℂ)` acts on `ℍ³` by
-Möbius transformations through the quaternions, by isometries of `hdist` that
-preserve `hvol`, and the Picard group `SL(2, ℤ[i])` inside it acts properly
-discontinuously; its congruence subgroup `Γ(2 + i)` has finite index and acts
-freely, so it is a Kleinian group. What Milestone 2 still lacks is a fundamental
-domain of finite positive volume; it and the goal are left open.
+have rationally related volumes.
+
+Milestone 2 is proved as well. `SL(2, ℂ)` acts on `ℍ³` by Möbius transformations
+through the quaternions, by isometries of `hdist` that preserve `hvol`; the
+Picard group `SL(2, ℤ[i])` inside it acts properly discontinuously, and its
+congruence subgroup `Γ(2 + i)` has finite index and acts freely, so it is a
+Kleinian group. A free, properly discontinuous action has a measurable
+fundamental domain, of volume at most that of any set meeting every orbit;
+reduction theory for the Picard group supplies such a set of finite volume, and
+`hvol ≠ 0` makes the volume positive. The goal is left open.
 -/
 import Mathlib
 
@@ -1588,14 +1592,378 @@ theorem isKleinian_gammaTwoI : IsKleinian gammaTwoI where
 
 end Congruence
 
+/-! ## Toward Milestone 2: a fundamental domain of finite positive volume
+
+No explicit fundamental domain is needed. A free, properly discontinuous action by
+homeomorphisms of a second countable space has a measurable fundamental domain: cover the space
+by countably many open sets `U n` that no nontrivial element maps into themselves, and keep a
+point of `U n` when its orbit misses every earlier `U m`. Its volume is at most that of any set
+meeting every orbit. For `Γ(2 + i)` such a set is a finite union of translates of the reduction
+box `|x|, |y| ≤ ½`, `|q| ≥ 1` of the Picard group — finite because `Γ(2 + i)` has finite index —
+and the box has finite volume, since it sits above height `½`. Positivity is `hvol ≠ 0`. -/
+
+section FundamentalDomainExistence
+
+open Filter Topology Pointwise
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
+/-- For a free, properly discontinuous action by homeomorphisms, every point has a neighbourhood
+that no element other than the identity maps into itself. -/
+theorem exists_nhds_smul_notMem [TopologicalSpace X] [T2Space X]
+    [WeaklyLocallyCompactSpace X]
+    (hcont : ∀ g : G, Continuous fun x : X => g • x)
+    (hfree : ∀ g : G, g ≠ 1 → ∀ x : X, g • x ≠ x)
+    (hpd : ∀ K : Set X, IsCompact K →
+      {g : G | ((fun x : X => g • x) '' K ∩ K).Nonempty}.Finite) (x : X) :
+    ∃ N ∈ 𝓝 x, ∀ g : G, g ≠ 1 → ∀ y ∈ N, g • y ∉ N := by
+  obtain ⟨K, hK, hKx⟩ := WeaklyLocallyCompactSpace.exists_compact_mem_nhds x
+  -- each `g ≠ 1` moves `x`, so it moves a whole neighbourhood of `x` off itself
+  have hloc : ∀ g : G, ∃ N ∈ 𝓝 x, g ≠ 1 → ∀ y ∈ N, g • y ∉ N := by
+    intro g
+    by_cases hg : g = 1
+    · exact ⟨Set.univ, univ_mem, fun h => absurd hg h⟩
+    obtain ⟨V, W, hV, hW, hxV, hgxW, hVW⟩ := t2_separation (hfree g hg x).symm
+    refine ⟨V ∩ (fun y => g • y) ⁻¹' W, inter_mem (hV.mem_nhds hxV)
+      ((hcont g).continuousAt.preimage_mem_nhds (hW.mem_nhds hgxW)), fun _ y hy hgy => ?_⟩
+    exact Set.disjoint_left.1 hVW hgy.1 hy.2
+  choose N hN hNsep using hloc
+  -- only the finitely many `g` that move `K` to meet itself need to be handled
+  refine ⟨K ∩ ⋂ g ∈ {g : G | ((fun x : X => g • x) '' K ∩ K).Nonempty}, N g,
+    inter_mem hKx ((biInter_mem (hpd K hK)).2 fun g _ => hN g), ?_⟩
+  rintro g hg y ⟨hyK, hyN⟩ ⟨hgyK, hgyN⟩
+  have hgS : g ∈ {g : G | ((fun x : X => g • x) '' K ∩ K).Nonempty} :=
+    ⟨g • y, ⟨y, hyK, rfl⟩, hgyK⟩
+  exact hNsep g hg y (Set.mem_iInter₂.1 hyN g hgS) (Set.mem_iInter₂.1 hgyN g hgS)
+
+/-- **A fundamental domain for a free, properly discontinuous action.** Cover the space by
+countably many open sets `U n` that no nontrivial element maps into themselves, and let `F`
+consist of the points of `U n` whose orbit misses `U m` for every `m < n`. Every orbit meets `F`,
+at the first `n` whose `U n` it meets, and meets it only once. -/
+theorem exists_isFundamentalDomain [TopologicalSpace X] [T2Space X]
+    [WeaklyLocallyCompactSpace X] [SecondCountableTopology X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [Countable G]
+    (hcont : ∀ g : G, Continuous fun x : X => g • x)
+    (hfree : ∀ g : G, g ≠ 1 → ∀ x : X, g • x ≠ x)
+    (hpd : ∀ K : Set X, IsCompact K →
+      {g : G | ((fun x : X => g • x) '' K ∩ K).Nonempty}.Finite) (μ : Measure X) :
+    ∃ F : Set X, IsFundamentalDomain G F μ := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨∅, IsFundamentalDomain.mk' MeasurableSet.empty.nullMeasurableSet
+      fun x => (hX.false x).elim⟩
+  choose N hN hsep using exists_nhds_smul_notMem hcont hfree hpd
+  obtain ⟨s, hsc, hsU⟩ :=
+    TopologicalSpace.countable_cover_nhds fun x => interior_mem_nhds.2 (hN x)
+  have hs : s.Nonempty := by
+    obtain ⟨x⟩ := hX
+    have hx : x ∈ ⋃ y ∈ s, interior (N y) := by rw [hsU]; trivial
+    obtain ⟨y, hy, -⟩ := Set.mem_iUnion₂.1 hx
+    exact ⟨y, hy⟩
+  obtain ⟨c, rfl⟩ := hsc.exists_eq_range hs
+  -- the open sets `U n`, and their saturations `O n`
+  obtain ⟨U, hU⟩ : ∃ U : ℕ → Set X, U = fun n => interior (N (c n)) := ⟨_, rfl⟩
+  obtain ⟨O, hO⟩ : ∃ O : ℕ → Set X, O = fun n => ⋃ g : G, (fun x => g • x) ⁻¹' U n :=
+    ⟨_, rfl⟩
+  have hUo : ∀ n, IsOpen (U n) := fun n => by rw [hU]; exact isOpen_interior
+  have hOo : ∀ n, IsOpen (O n) := fun n => by
+    rw [hO]; exact isOpen_iUnion fun g => (hUo n).preimage (hcont g)
+  have hUsep : ∀ n (g : G), g ≠ 1 → ∀ y ∈ U n, g • y ∉ U n := by
+    intro n g hg y hy hgy
+    simp only [hU] at hy hgy
+    exact hsep (c n) g hg y (interior_subset hy) (interior_subset hgy)
+  have hcovU : ∀ x, ∃ n, x ∈ U n := by
+    intro x
+    have hx : x ∈ ⋃ y ∈ Set.range c, interior (N y) := by rw [hsU]; trivial
+    obtain ⟨_, ⟨n, rfl⟩, hxn⟩ := Set.mem_iUnion₂.1 hx
+    exact ⟨n, by simpa only [hU] using hxn⟩
+  have hmemO : ∀ n x, x ∈ O n ↔ ∃ g : G, g • x ∈ U n := by
+    intro n x
+    simp only [hO, Set.mem_iUnion, Set.mem_preimage]
+  have hOinv : ∀ n (h : G) x, h • x ∈ O n ↔ x ∈ O n := by
+    intro n h x
+    rw [hmemO, hmemO]
+    constructor
+    · rintro ⟨g, hg⟩
+      exact ⟨g * h, by rwa [mul_smul]⟩
+    · rintro ⟨g, hg⟩
+      exact ⟨g * h⁻¹, by rwa [mul_smul, inv_smul_smul]⟩
+  -- the domain
+  obtain ⟨F, hF⟩ : ∃ F : Set X, F = ⋃ n, U n \ ⋃ m, ⋃ (_ : m < n), O m := ⟨_, rfl⟩
+  have hmemF : ∀ x, x ∈ F ↔ ∃ n, x ∈ U n ∧ ∀ m < n, x ∉ O m := by
+    intro x
+    simp only [hF, Set.mem_iUnion, Set.mem_diff, not_exists]
+  -- no nontrivial element maps a point of `F` into `F`
+  have huniq : ∀ y (h : G), y ∈ F → h • y ∈ F → h = 1 := by
+    intro y h hy hhy
+    obtain ⟨n, hn, hnm⟩ := (hmemF y).1 hy
+    obtain ⟨n', hn', hnm'⟩ := (hmemF _).1 hhy
+    by_contra h1
+    rcases lt_trichotomy n n' with hlt | rfl | hlt
+    · exact hnm' n hlt ((hmemO n _).2 ⟨h⁻¹, by rwa [inv_smul_smul]⟩)
+    · exact hUsep n h h1 y hn hn'
+    · exact hnm n' hlt ((hmemO n' y).2 ⟨h, hn'⟩)
+  refine ⟨F, IsFundamentalDomain.mk' ?_ fun x => ?_⟩
+  · rw [hF]
+    exact (MeasurableSet.iUnion fun n => (hUo n).measurableSet.diff
+      (MeasurableSet.iUnion fun m => MeasurableSet.iUnion fun _ =>
+        (hOo m).measurableSet)).nullMeasurableSet
+  · classical
+    have hex : ∃ n, x ∈ O n := by
+      obtain ⟨n, hn⟩ := hcovU x
+      exact ⟨n, (hmemO n x).2 ⟨1, by rwa [one_smul]⟩⟩
+    obtain ⟨g, hg⟩ := (hmemO _ x).1 (Nat.find_spec hex)
+    have hgF : g • x ∈ F := (hmemF _).2 ⟨Nat.find hex, hg, fun m hm hgm =>
+      Nat.find_min hex hm ((hOinv m g x).1 hgm)⟩
+    refine ⟨g, hgF, fun g' hg' => ?_⟩
+    have h1 := huniq (g • x) (g' * g⁻¹) hgF (by rwa [mul_smul, inv_smul_smul])
+    exact mul_inv_eq_one.1 h1
+
+/-- A fundamental domain has at most the measure of any set meeting every orbit. -/
+theorem measure_le_of_forall_exists_smul_mem [MeasurableSpace X] {μ : Measure X} [Countable G]
+    [SMulInvariantMeasure G X μ] [MeasurableConstSMul G X] {F E : Set X}
+    (hF : IsFundamentalDomain G F μ) (hE : ∀ x : X, ∃ g : G, g • x ∈ E) : μ F ≤ μ E := by
+  calc μ F ≤ μ (⋃ g : G, g • E ∩ F) := measure_mono fun x hx => by
+        obtain ⟨g, hg⟩ := hE x
+        exact Set.mem_iUnion.2
+          ⟨g⁻¹, Set.mem_smul_set_iff_inv_smul_mem.2 (by rwa [inv_inv]), hx⟩
+    _ ≤ ∑' g : G, μ (g • E ∩ F) := measure_iUnion_le _
+    _ = μ E := (hF.measure_eq_tsum E).symm
+
+end FundamentalDomainExistence
+
+section Covolume
+
+open MatrixGroups Quaternion Pointwise
+
+instance : SMulInvariantMeasure SL(2, ℂ) H3 hvol :=
+  ⟨fun g _ hs => (measurePreserving_smul g).measure_preimage hs.nullMeasurableSet⟩
+
+instance : MeasurableConstSMul SL(2, ℂ) H3 := ⟨fun g => (continuous_smul g).measurable⟩
+
+theorem normSq_toQ (p : H3) : normSq (toQ p) = N p.1 := by
+  rw [normSq_def']; simp [toQ, N]; ring
+
+theorem T_mem_picard (z : GaussianInt) : T (z : ℂ) ∈ picard :=
+  mem_picard_iff.2 (Fin.forall_fin_two.2
+    ⟨Fin.forall_fin_two.2 ⟨⟨1, by simp [T]⟩, ⟨z, by simp [T]⟩⟩,
+      Fin.forall_fin_two.2 ⟨⟨0, by simp [T]⟩, ⟨1, by simp [T]⟩⟩⟩)
+
+theorem S_mem_picard : S ∈ picard :=
+  mem_picard_iff.2 (Fin.forall_fin_two.2
+    ⟨Fin.forall_fin_two.2 ⟨⟨0, by simp [S]⟩, ⟨-1, by simp [S]⟩⟩,
+      Fin.forall_fin_two.2 ⟨⟨1, by simp [S]⟩, ⟨0, by simp [S]⟩⟩⟩)
+
+/-- Along an orbit of the Picard group only finitely many heights are at least the starting
+one: they are `t / |c q + d|²` with `|c q + d|² ≤ 1`, which bounds the Gaussian integers `c`
+and `d`. -/
+theorem finite_heights (p : H3) :
+    ((fun g : SL(2, ℂ) => (g • p).1 2) '' {g | g ∈ picard ∧ p.1 2 ≤ (g • p).1 2}).Finite := by
+  have ht0 : 0 < p.1 2 := p.2
+  refine (((finite_gaussianInt_normSq_le (1 / p.1 2 ^ 2)).prod
+    (finite_gaussianInt_normSq_le (2 * (1 + 1 / p.1 2 ^ 2 * normSq (toQ p))))).image
+      fun cd : ℂ × ℂ => p.1 2 / normSq ((cd.1 : ℍ) * toQ p + (cd.2 : ℍ))).subset ?_
+  rintro _ ⟨g, ⟨hg, hle⟩, rfl⟩
+  have hh := smul_height g p
+  have hMpos := normSq_pos (denom_ne_zero (sl2_row_ne_zero g) (toQ_imK p) p.2)
+  have hc := normSq_mul_imJ_le (g 1 0) (g 1 1) (toQ_imK p)
+  rw [show (toQ p).imJ = p.1 2 from rfl] at hc
+  generalize hM : ((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ) = M at hh hMpos hc
+  -- `|c q + d|² ≤ 1`, since the height did not drop
+  have hM1 : normSq M ≤ 1 := by
+    rw [hh, le_div_iff₀ hMpos] at hle
+    nlinarith
+  have hcb : Complex.normSq (g 1 0) ≤ 1 / p.1 2 ^ 2 := by
+    rw [le_div_iff₀ (by positivity)]
+    linarith
+  have hd : ((g 1 1 : ℂ) : ℍ) = M + -(((g 1 0 : ℂ) : ℍ) * toQ p) := by rw [← hM]; abel
+  have hdb := normSq_add_le M (-(((g 1 0 : ℂ) : ℍ) * toQ p))
+  rw [← hd, normSq_neg, map_mul, normSq_coeComplex, normSq_coeComplex] at hdb
+  have hcq : Complex.normSq (g 1 0) * normSq (toQ p) ≤ 1 / p.1 2 ^ 2 * normSq (toQ p) :=
+    mul_le_mul_of_nonneg_right hcb normSq_nonneg
+  refine ⟨(g 1 0, g 1 1), ⟨⟨entry_mem_of_mem_picard hg 1 0, hcb⟩,
+    ⟨entry_mem_of_mem_picard hg 1 1, by linarith⟩⟩, ?_⟩
+  show p.1 2 / normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) = (g • p).1 2
+  rw [hM, hh]
+
+/-- Every orbit of the Picard group has a point of maximal height. -/
+theorem exists_max_height (p : H3) :
+    ∃ g₀ ∈ picard, ∀ g ∈ picard, (g • p).1 2 ≤ (g₀ • p).1 2 := by
+  have h1 : (1 : SL(2, ℂ)) ∈ {g | g ∈ picard ∧ p.1 2 ≤ (g • p).1 2} :=
+    ⟨picard.one_mem, by simp only [one_smul, le_refl]⟩
+  have hne : ((fun g : SL(2, ℂ) => (g • p).1 2) ''
+      {g | g ∈ picard ∧ p.1 2 ≤ (g • p).1 2}).Nonempty := ⟨_, 1, h1, rfl⟩
+  have hbdd := (finite_heights p).bddAbove
+  obtain ⟨g₀, ⟨hg₀, -⟩, hmax⟩ := hne.csSup_mem (finite_heights p)
+  have hmax' : (g₀ • p).1 2 = sSup ((fun g : SL(2, ℂ) => (g • p).1 2) ''
+      {g | g ∈ picard ∧ p.1 2 ≤ (g • p).1 2}) := hmax
+  refine ⟨g₀, hg₀, fun g hg => ?_⟩
+  rw [hmax']
+  by_cases hle : p.1 2 ≤ (g • p).1 2
+  · exact le_csSup hbdd ⟨g, ⟨hg, hle⟩, rfl⟩
+  · exact (not_le.1 hle).le.trans (le_csSup hbdd ⟨1, h1, by simp only [one_smul]⟩)
+
+/-- The reduction box of the Picard group: `|x|, |y| ≤ ½` and `|q| ≥ 1`. -/
+def picardBox : Set H3 := {p | |p.1 0| ≤ 1 / 2 ∧ |p.1 1| ≤ 1 / 2 ∧ 1 ≤ N p.1}
+
+/-- **Reduction.** The Picard group carries every point into the box: take a point of maximal
+height on the orbit and translate it into the strip `|x|, |y| ≤ ½`; then `|q| ≥ 1`, since
+otherwise `S`, which divides the height by `|q|²`, would raise it further. -/
+theorem exists_smul_mem_picardBox (p : H3) : ∃ g ∈ picard, g • p ∈ picardBox := by
+  obtain ⟨g₀, hg₀, hmax⟩ := exists_max_height p
+  have hg₁ : T ((⟨-round ((g₀ • p).1 0), -round ((g₀ • p).1 1)⟩ : GaussianInt) : ℂ) * g₀ ∈
+      picard := picard.mul_mem (T_mem_picard _) hg₀
+  set g₁ := T ((⟨-round ((g₀ • p).1 0), -round ((g₀ • p).1 1)⟩ : GaussianInt) : ℂ) * g₀
+    with hg₁def
+  have hval : (g₁ • p).1 = (g₀ • p).1 +
+      ![((⟨-round ((g₀ • p).1 0), -round ((g₀ • p).1 1)⟩ : GaussianInt) : ℂ).re,
+        ((⟨-round ((g₀ • p).1 0), -round ((g₀ • p).1 1)⟩ : GaussianInt) : ℂ).im, 0] := by
+    rw [hg₁def, mul_smul, T_smul_val]
+  have h0 : |(g₁ • p).1 0| ≤ 1 / 2 := by
+    rw [hval]
+    simpa [GaussianInt.re_toComplex, sub_eq_add_neg] using abs_sub_round ((g₀ • p).1 0)
+  have h1 : |(g₁ • p).1 1| ≤ 1 / 2 := by
+    rw [hval]
+    simpa [GaussianInt.im_toComplex, sub_eq_add_neg] using abs_sub_round ((g₀ • p).1 1)
+  have h2 : (g₁ • p).1 2 = (g₀ • p).1 2 := by rw [hval]; simp
+  refine ⟨g₁, hg₁, h0, h1, ?_⟩
+  by_contra hlt
+  push_neg at hlt
+  have hS10 : S 1 0 = 1 := by simp [S]
+  have hS11 : S 1 1 = 0 := by simp [S]
+  have hht : ((S * g₁) • p).1 2 = (g₁ • p).1 2 / N (g₁ • p).1 := by
+    rw [mul_smul, smul_height S (g₁ • p), hS10, hS11, coeComplex_one, coeComplex_zero, one_mul,
+      add_zero, normSq_toQ]
+  have hNpos : 0 < N (g₁ • p).1 := N_pos (g₁ • p).2
+  have hle := hmax _ (picard.mul_mem S_mem_picard hg₁)
+  rw [hht, h2, div_le_iff₀ hNpos] at hle
+  nlinarith [mul_lt_mul_of_pos_left hlt (g₀ • p).2]
+
+/-- The box `[-½, ½]² × [½, ∞)` in `ℝ³`. -/
+def tallBox : Set (Fin 3 → ℝ) :=
+  Set.pi Set.univ ![Set.Icc (-(1 / 2)) (1 / 2), Set.Icc (-(1 / 2)) (1 / 2), Set.Ici (1 / 2)]
+
+/-- The reduction box lies above height `½`: `t² ≥ 1 − x² − y² ≥ ½`. -/
+theorem picardBox_subset : picardBox ⊆ Subtype.val ⁻¹' tallBox := by
+  rintro p ⟨h0, h1, hN⟩
+  have hx := abs_le.1 h0
+  have hy := abs_le.1 h1
+  have hx2 : p.1 0 * p.1 0 ≤ 1 / 4 := by nlinarith
+  have hy2 : p.1 1 * p.1 1 ≤ 1 / 4 := by nlinarith
+  have ht : 1 / 2 ≤ p.1 2 := by
+    unfold N at hN
+    nlinarith [p.2]
+  refine Set.mem_univ_pi.2 fun i => ?_
+  fin_cases i
+  · exact ⟨hx.1, hx.2⟩
+  · exact ⟨hy.1, hy.2⟩
+  · exact ht
+
+set_option maxHeartbeats 400000 in
+/-- The box `[-½, ½]² × [½, ∞)` has finite hyperbolic volume, `∫_{½}^∞ t⁻³ dt` being finite. -/
+theorem hvol_tallBox_lt_top : hvol (Subtype.val ⁻¹' tallBox) < ⊤ := by
+  set S : Fin 3 → Set ℝ :=
+    ![Set.Icc (-(1 / 2)) (1 / 2), Set.Icc (-(1 / 2)) (1 / 2), Set.Ici (1 / 2)] with hS
+  set h : Fin 3 → ℝ → ℝ := ![fun _ => 1, fun _ => 1, fun t => (t ^ 3)⁻¹] with hh
+  set f : Fin 3 → ℝ → ℝ := fun i => (S i).indicator (h i) with hf
+  have hSm : ∀ i, MeasurableSet (S i) := by
+    intro i; fin_cases i
+    · exact measurableSet_Icc
+    · exact measurableSet_Icc
+    · exact measurableSet_Ici
+  have hBm : MeasurableSet tallBox := MeasurableSet.univ_pi hSm
+  have hBsub : tallBox ⊆ Set.range (Subtype.val : H3 → Fin 3 → ℝ) := by
+    intro x hx
+    have h2 : x 2 ∈ Set.Ici (1 / 2 : ℝ) := Set.mem_univ_pi.1 hx 2
+    exact ⟨⟨x, lt_of_lt_of_le (by norm_num) h2⟩, rfl⟩
+  rw [hvol_apply (measurableEmbedding_val.measurable hBm), Set.image_preimage_eq_of_subset hBsub,
+    ← lintegral_indicator hBm]
+  -- the integrand is a product of one-variable functions
+  have hpt : ∀ x, tallBox.indicator ρ x = ENNReal.ofReal (∏ i, f i (x i)) := by
+    intro x
+    by_cases hx : x ∈ tallBox
+    · have hxi : ∀ i, x i ∈ S i := Set.mem_univ_pi.1 hx
+      rw [Set.indicator_of_mem hx, Fin.prod_univ_three]
+      simp only [hf, Set.indicator_of_mem (hxi 0), Set.indicator_of_mem (hxi 1),
+        Set.indicator_of_mem (hxi 2), hh]
+      simp [ρ]
+    · rw [Set.indicator_of_notMem hx]
+      obtain ⟨i, hi⟩ : ∃ i, x i ∉ S i := by
+        by_contra hcon
+        push_neg at hcon
+        exact hx (Set.mem_univ_pi.2 hcon)
+      rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [hf, Set.indicator_of_notMem hi])]
+      simp
+  have hfi : ∀ i, Integrable (f i) := by
+    intro i; fin_cases i
+    · exact (integrable_indicator_iff measurableSet_Icc).2 continuous_const.integrableOn_Icc
+    · exact (integrable_indicator_iff measurableSet_Icc).2 continuous_const.integrableOn_Icc
+    · show Integrable ((Set.Ici (1 / 2 : ℝ)).indicator fun t => (t ^ 3)⁻¹)
+      refine (integrable_indicator_iff measurableSet_Ici).2 ?_
+      rw [integrableOn_Ici_iff_integrableOn_Ioi]
+      refine (integrableOn_Ioi_rpow_of_lt (a := -3) (by norm_num)
+        (by norm_num : (0 : ℝ) < 1 / 2)).congr_fun (fun t ht => ?_) measurableSet_Ioi
+      have ht0 : (0 : ℝ) ≤ t := (lt_trans (by norm_num) ht).le
+      simp [Real.rpow_neg ht0]
+  simp_rw [hpt]
+  exact (Integrable.fintype_prod hfi).lintegral_lt_top
+
+instance : Countable gammaTwoI :=
+  countable_of_properlyDiscontinuous basepoint
+    (properlyDiscontinuous_of_le_picard gammaTwoI_le_picard)
+
+/-- **M2.6.** `Γ(2 + i)` has a fundamental domain of finite, positive hyperbolic volume. -/
+theorem exists_fundamentalDomain_gammaTwoI :
+    ∃ F : Set H3, IsFundamentalDomain gammaTwoI F hvol ∧ 0 < hvol F ∧ hvol F < ⊤ := by
+  obtain ⟨F, hF⟩ := exists_isFundamentalDomain (G := ↥gammaTwoI) (X := H3)
+    (fun g => continuous_smul (g : SL(2, ℂ)))
+    (fun g hg p => gammaTwoI_free g.2 (fun h => hg (Subtype.ext h)) p)
+    (properlyDiscontinuous_of_le_picard gammaTwoI_le_picard) hvol
+  refine ⟨F, hF, pos_iff_ne_zero.2 (hF.measure_ne_zero hvol_ne_zero), ?_⟩
+  -- finitely many translates of the box meet every orbit of `Γ(2 + i)`
+  haveI : (gammaTwoI.subgroupOf picard).FiniteIndex := ⟨relIndex_gammaTwoI_picard⟩
+  haveI : Fintype (picard ⧸ gammaTwoI.subgroupOf picard) := Fintype.ofFinite _
+  have hcov : ∀ p : H3, ∃ γ : gammaTwoI, γ • p ∈
+      ⋃ q : picard ⧸ gammaTwoI.subgroupOf picard,
+        ((Quotient.out q : picard) : SL(2, ℂ))⁻¹ • picardBox := by
+    intro p
+    obtain ⟨g, hg, hgp⟩ := exists_smul_mem_picardBox p
+    have hmem : (Quotient.out ((⟨g, hg⟩ : picard) : picard ⧸ gammaTwoI.subgroupOf picard))⁻¹ *
+        ⟨g, hg⟩ ∈ gammaTwoI.subgroupOf picard := by
+      have := QuotientGroup.eq.mp
+        (QuotientGroup.out_eq' ((⟨g, hg⟩ : picard) : picard ⧸ gammaTwoI.subgroupOf picard))
+      simpa using this
+    refine ⟨⟨_, Subgroup.mem_subgroupOf.1 hmem⟩, Set.mem_iUnion.2
+      ⟨((⟨g, hg⟩ : picard) : picard ⧸ gammaTwoI.subgroupOf picard), ?_⟩⟩
+    show (((Quotient.out ((⟨g, hg⟩ : picard) : picard ⧸ gammaTwoI.subgroupOf picard))⁻¹ *
+      ⟨g, hg⟩ : picard) : SL(2, ℂ)) • p ∈ _
+    rw [Subgroup.coe_mul, Subgroup.coe_inv, mul_smul]
+    exact Set.smul_mem_smul_set hgp
+  have hEfin : hvol (⋃ q : picard ⧸ gammaTwoI.subgroupOf picard,
+      ((Quotient.out q : picard) : SL(2, ℂ))⁻¹ • picardBox) < ⊤ := by
+    refine (measure_iUnion_le _).trans_lt ?_
+    rw [tsum_fintype]
+    simp only [measure_smul]
+    rw [Finset.sum_const, nsmul_eq_mul]
+    exact ENNReal.mul_lt_top (ENNReal.natCast_lt_top _)
+      ((measure_mono picardBox_subset).trans_lt hvol_tallBox_lt_top)
+  exact (measure_le_of_forall_exists_smul_mem hF hcov).trans_lt hEfin
+
+end Covolume
+
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below
 would be vacuously false rather than open. This is not a warm-up: it asks for a
 concrete cofinite-volume Kleinian group together with a fundamental domain of
 finite positive measure, and Mathlib has no `ℍ³`, no `Isom(ℍ³)` and no action of
-`PSL(2,ℂ)` on the upper half-space. -/
+`PSL(2,ℂ)` on the upper half-space.
+
+Proved with the congruence subgroup `Γ(2 + i)` of the Picard group: it is Kleinian
+(`isKleinian_gammaTwoI`) and has a fundamental domain of finite positive volume
+(`exists_fundamentalDomain_gammaTwoI`). -/
 theorem hyperbolicVolumes_nonempty : hyperbolicVolumes.Nonempty := by
-  sorry
+  obtain ⟨F, hF, hpos, hfin⟩ := exists_fundamentalDomain_gammaTwoI
+  exact ⟨(hvol F).toReal, ↥gammaTwoI, inferInstance, inferInstance, isKleinian_gammaTwoI, F, hF,
+    (ENNReal.ofReal_toReal hfin.ne).symm, ENNReal.toReal_pos hpos.ne' hfin.ne⟩
 
 /-! ## The goal -/
 

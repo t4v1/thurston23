@@ -51,8 +51,13 @@ dilations and the inversion, each a change of variables). The Picard group
 `picard = SL(2, ℤ[i])` and every subgroup of it act properly discontinuously
 (`properlyDiscontinuous_of_le_picard`): a compact set lies in a box, and an
 element moving a point of the box into the box has all four entries bounded.
-A torsion-free finite-index subgroup and a fundamental domain are the
-remaining steps (see `PROBLEMS.md`).
+The congruence subgroup `gammaTwoI = Γ(2 + i)` has finite index in it
+(`relIndex_gammaTwoI_picard`) and acts freely (`gammaTwoI_free`): a fixed
+point forces the trace to be real of absolute value at most `2`, and the only
+such Gaussian integer congruent to `2` modulo `2 + i` is `2`, which forces
+`g = 1`. So `isKleinian_gammaTwoI` — the first inhabitant of `IsKleinian`. A
+fundamental domain of finite positive volume is the remaining step (see
+`PROBLEMS.md`).
 
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as

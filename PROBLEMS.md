@@ -18,7 +18,7 @@ Legend: `M` mission targets · `S` sanity and support theorems on the bundle ·
 together with `countable_of_properlyDiscontinuous`; no hypothesis was added
 to the published statement. Commit `cd0f0c4`.
 
-### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1–M2.4 done)**
+### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1–M2.5 done)**
 `hyperbolicVolumes_nonempty`. Needs a genuine lattice: `hyperbolicVolumes`
 demands finite *and* positive volume, so the trivial group (infinite
 volume) does not qualify. Chosen route: the Picard group `SL(2, ℤ[i])`, whose
@@ -63,18 +63,19 @@ Effort: months. Sub-problems, in order:
   All bounds go through `|x + y|² ≤ 2(|x|² + |y|²)`, so no square root is
   taken. Stated for every subgroup of `picard`, which is the form M2.7 needs.
   ~200 lines.
-- **M2.5 · A torsion-free finite-index subgroup** — open. Use the principal
-  congruence subgroup `Γ(2+i)` (level of norm 5). Freeness: if `g p = p`
-  then the `j`-component of `a p + b = p (c p + d)` gives
-  `a = 2 Re(c z) + conj d`, so `tr g = 2 Re(c z + d)` is real, and height
-  preservation gives `|c z + d|² + |c|² t² = 1`, so `|tr g| ≤ 2`. Hence
-  `tr g ∈ {−2, …, 2} ⊂ ℤ`, while `tr g ≡ 2 (mod 2+i)`; `tr − 2 ∈ {−4, …, 0}`
-  has norm `≤ 16` and only `0` is divisible by `2+i`, so `tr g = 2`, which
-  with `|c z + d| = 1` forces `c = 0`, `g = ±T(b)`, then `b = 0` and `g = I`
-  (`−I ∉ Γ(2+i)` since `2 ∉ (2+i)`). Finite index: `Γ(𝔞)` is the kernel of
-  reduction mod `𝔞`, `ℤ[i]/𝔞` finite. Define it in `SL(2, ℤ[i])` and push it
-  into `picard` along `SpecialLinearGroup.map toComplex`, which is injective,
-  so the index carries over. ~250 lines.
+- **M2.5 · A torsion-free finite-index subgroup** — **proved**
+  (`relIndex_gammaTwoI_picard`, `gammaTwoI_free`, and with M2.2–M2.4
+  `isKleinian_gammaTwoI`, the first inhabitant of `IsKleinian`).
+  `gammaTwoIZ` is the kernel of reduction mod `(2+i)` in `SL(2, ℤ[i])` and
+  `gammaTwoI` its image in `SL(2, ℂ)`. Finite index: `ℤ[i]/(2+i)` is covered
+  by the residues `0, …, 4` (`i ≡ −2`, `5 = (2+i)(2−i)`; `omega` does the
+  arithmetic), so `SL(2, ℤ[i]/(2+i))` is finite and the kernel has finite
+  index; `relIndex_map_map_of_injective` carries it into `picard`. Freeness:
+  at a fixed point the four components of `q (c q + d) = a q + b` and
+  `|c q + d|² = 1` are pure real algebra (`fixed_point_real`), giving
+  `tr g` real in `[−2, 2]`, and `tr g = 2 ⇒ g = 1` directly — no `±` case
+  split: `tr − 2 ≡ 0 (mod 2+i)` with `tr − 2 ∈ [−4, 0]` already excludes
+  `−I` (`eq_two_of_sub_two_mem`). ~250 lines.
 - **M2.6 · A fundamental domain of finite positive volume** — open; the long
   pole. Big group: `PSL(2, ℤ[i]) := SL(2, ℤ[i]) ⧸ {±I}`, acting through
   `Quotient.lift` since `−I` acts trivially (the L4 trap). Domain: the
@@ -91,14 +92,13 @@ Effort: months. Sub-problems, in order:
   `c` a unit gives `|z − w|² < |z|²` for a Gaussian integer `w ≠ 0`, impossible
   for `0 < Re z < ½`, `|Im z| < ½`; (iv) the boundary is `hvol`-null — planes
   and a sphere, `hvol ≪ volume`; (v) `hvol B⁺ ≤ ∫₀^{½}∫_{−½}^{½}∫_{1/√2}^∞ t⁻³ < ∞`
-  and `> 0`; (vi) transport: `Γ(2+i)` injects into `PSL`, its image has
-  finite index, `isFundamentalDomain_iUnion_out` gives the domain, and
-  `measure_eq_index_smul` its volume `index × hvol B⁺`, finite and positive.
-  ~800 lines.
-- **M2.7 · Assemble** `hyperbolicVolumes_nonempty` from M2.1–M2.6: `IsKleinian`
-  for `Γ(2+i)` is M2.2 (isometry), M2.3 (measure preservation), M2.5
-  (freeness), `properlyDiscontinuous_of_le_picard` (proper discontinuity).
-  ~50 lines.
+  and `> 0`; (vi) transport: `Γ(2+i)` injects into `PSL` (its only element
+  acting trivially is `1`, by `gammaTwoI_free`), its image has
+  finite index (`relIndex_gammaTwoI_picard`), `isFundamentalDomain_iUnion_out`
+  gives the domain, and `measure_eq_index_smul` its volume
+  `index × hvol B⁺`, finite and positive. ~800 lines.
+- **M2.7 · Assemble** `hyperbolicVolumes_nonempty` from `isKleinian_gammaTwoI`
+  and M2.6's fundamental domain for `gammaTwoI`. ~20 lines.
 
 ### M3 · Goal — some two volumes have irrational ratio — **open mathematics**
 `thurston_question_23`, `thurston_question_23_strong`. Not a formalization
@@ -137,7 +137,10 @@ action as a `MulAction (Multiplicative ℤ) H3`, isometry of `hdist` under
 x-translation (the formula is translation-invariant termwise), measure
 preservation (translation invariance of Lebesgue measure through `comap`),
 freeness, proper discontinuity (bounded `x`-coordinate on a compact set).
-Effort: an hour or two. `IsKleinian` currently has no inhabitant anywhere.
+Effort: an hour or two. Less urgent since M2.5: `isKleinian_gammaTwoI` is a
+nontrivial inhabitant of `IsKleinian`, and `IsKleinian.subgroup` gives the
+Kleinian half of (ii) for any translation subgroup of `Γ(2+i)`; only the
+infinite-volume fundamental domain would remain.
 
 ### S5 · `hvol.IsOpenPosMeasure` — **open**
 Every nonempty open set has positive volume. Not given by S1. Small; useful

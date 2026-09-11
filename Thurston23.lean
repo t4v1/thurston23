@@ -38,7 +38,9 @@ Thurston's framing is also proved: commensurable subgroups of a Kleinian group
 have rationally related volumes. Toward Milestone 2, `SL(2, ℂ)` acts on `ℍ³` by
 Möbius transformations through the quaternions, by isometries of `hdist` that
 preserve `hvol`, and the Picard group `SL(2, ℤ[i])` inside it acts properly
-discontinuously. Milestone 2 itself and the goal are left open.
+discontinuously; its congruence subgroup `Γ(2 + i)` has finite index and acts
+freely, so it is a Kleinian group. What Milestone 2 still lacks is a fundamental
+domain of finite positive volume; it and the goal are left open.
 -/
 import Mathlib
 
@@ -1378,6 +1380,213 @@ theorem picard_properlyDiscontinuous (K : Set H3) (hK : IsCompact K) :
   properlyDiscontinuous_of_le_picard le_rfl K hK
 
 end Picard
+
+/-! ## Toward Milestone 2: a torsion-free subgroup of finite index
+
+The principal congruence subgroup `Γ(2 + i)`: the matrices of `SL(2, ℤ[i])` congruent to the
+identity modulo the prime `2 + i`, of norm `5`. It has finite index, being the kernel of
+reduction to the finite group `SL(2, ℤ[i]/(2 + i))`, and it acts freely. At a fixed point
+`q = z + t j` of `g`, the `j` and `k` parts of `q (c q + d) = a q + b` give
+`a = 2 Re(c z) + conj d`, so `tr g = 2 Re(c z + d)` is real, and the heights give
+`|c q + d| = 1`, so `|tr g| ≤ 2`. For `g ∈ Γ(2 + i)` the trace is a Gaussian integer congruent
+to `2`, and the only one in `[-2, 2]` is `2` itself; a fixed point with trace `2` forces `c = 0`,
+`a = d = 1` and `b = 0`. (So `-I`, of trace `-2`, is not in `Γ(2 + i)` either.) With M2.2–M2.4
+this makes `Γ(2 + i)` a Kleinian group. -/
+
+section Congruence
+
+open MatrixGroups Quaternion
+
+/-- The real algebra at a fixed point. The variables are the coordinates of `q = x + y i + t j`
+and the real and imaginary parts of the entries; the hypotheses are the four components of
+`q (c q + d) = a q + b` and `|c q + d|² = 1`. -/
+theorem fixed_point_real (x y t a₁ a₂ b₁ b₂ c₁ c₂ d₁ d₂ : ℝ) (ht : 0 < t)
+    (e₀ : x * (c₁ * x - c₂ * y + d₁) - y * (c₁ * y + c₂ * x + d₂) - t * (c₁ * t) =
+      a₁ * x - a₂ * y + b₁)
+    (e₁ : x * (c₁ * y + c₂ * x + d₂) + y * (c₁ * x - c₂ * y + d₁) + t * (c₂ * t) =
+      a₁ * y + a₂ * x + b₂)
+    (e₂ : t * (2 * (c₁ * x - c₂ * y) + d₁) = a₁ * t)
+    (e₃ : -(t * d₂) = a₂ * t)
+    (hN : (c₁ * x - c₂ * y + d₁) ^ 2 + (c₁ * y + c₂ * x + d₂) ^ 2 + (c₁ * t) ^ 2 +
+      (c₂ * t) ^ 2 = 1) :
+    a₂ + d₂ = 0 ∧ -2 ≤ a₁ + d₁ ∧ a₁ + d₁ ≤ 2 ∧
+      (a₁ + d₁ = 2 →
+        a₁ = 1 ∧ a₂ = 0 ∧ b₁ = 0 ∧ b₂ = 0 ∧ c₁ = 0 ∧ c₂ = 0 ∧ d₁ = 1 ∧ d₂ = 0) := by
+  have ht0 : t ≠ 0 := ht.ne'
+  have ha₁ : a₁ = 2 * (c₁ * x - c₂ * y) + d₁ :=
+    mul_right_cancel₀ ht0 (by linear_combination (-1 : ℝ) * e₂)
+  have ha₂ : a₂ = -d₂ := mul_right_cancel₀ ht0 (by linear_combination (-1 : ℝ) * e₃)
+  have htr : a₁ + d₁ = 2 * (c₁ * x - c₂ * y + d₁) := by linear_combination ha₁
+  have hm : (c₁ * x - c₂ * y + d₁) ^ 2 ≤ 1 := by
+    nlinarith [sq_nonneg (c₁ * y + c₂ * x + d₂), sq_nonneg (c₁ * t), sq_nonneg (c₂ * t)]
+  refine ⟨by linear_combination ha₂, by nlinarith [sq_nonneg (c₁ * x - c₂ * y + d₁ + 1)],
+    by nlinarith [sq_nonneg (c₁ * x - c₂ * y + d₁ - 1)], fun h2 => ?_⟩
+  have hm1 : c₁ * x - c₂ * y + d₁ = 1 := by linarith
+  have hS : (c₁ * y + c₂ * x + d₂) ^ 2 + (c₁ * t) ^ 2 + (c₂ * t) ^ 2 = 0 := by
+    linear_combination hN - (c₁ * x - c₂ * y + d₁ + 1) * hm1
+  have hc₁ : c₁ = 0 := by
+    have h : (c₁ * t) ^ 2 = 0 := by
+      nlinarith [sq_nonneg (c₁ * y + c₂ * x + d₂), sq_nonneg (c₁ * t), sq_nonneg (c₂ * t)]
+    exact (mul_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 h)).resolve_right ht0
+  have hc₂ : c₂ = 0 := by
+    have h : (c₂ * t) ^ 2 = 0 := by
+      nlinarith [sq_nonneg (c₁ * y + c₂ * x + d₂), sq_nonneg (c₁ * t), sq_nonneg (c₂ * t)]
+    exact (mul_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 h)).resolve_right ht0
+  subst hc₁ hc₂
+  have hd₁ : d₁ = 1 := by linear_combination hm1
+  have hd₂ : d₂ = 0 := (pow_eq_zero_iff two_ne_zero).1 (by linear_combination hS)
+  subst hd₁ hd₂
+  have ha₁' : a₁ = 1 := by linear_combination ha₁
+  have ha₂' : a₂ = 0 := by linear_combination ha₂
+  subst ha₁' ha₂'
+  exact ⟨rfl, rfl, by linear_combination (-1 : ℝ) * e₀, by linear_combination (-1 : ℝ) * e₁,
+    rfl, rfl, rfl, rfl⟩
+
+/-- At a fixed point of `g` the trace is real and lies in `[-2, 2]`, and it is `2` only for
+`g = 1`. -/
+theorem fixed_point_trace (g : SL(2, ℂ)) (p : H3) (hfix : g • p = p) :
+    (g 0 0 + g 1 1).im = 0 ∧ -2 ≤ (g 0 0 + g 1 1).re ∧ (g 0 0 + g 1 1).re ≤ 2 ∧
+      (g 0 0 + g 1 1 = 2 → g = 1) := by
+  have hK := toQ_imK p
+  have hM0 := denom_ne_zero (sl2_row_ne_zero g) hK p.2
+  -- `q (c q + d) = a q + b`
+  have hq : toQ p * (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) =
+      ((g 0 0 : ℂ) : ℍ) * toQ p + ((g 0 1 : ℂ) : ℍ) := by
+    have e : mobiusQ g (toQ p) * (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) =
+        ((g 0 0 : ℂ) : ℍ) * toQ p + ((g 0 1 : ℂ) : ℍ) := by
+      unfold mobiusQ
+      exact inv_mul_cancel_right₀ hM0 _
+    rwa [← toQ_smul, hfix] at e
+  -- `|c q + d|² = 1`, since the height is unchanged
+  have hN : normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) = 1 := by
+    have hh := smul_height g p
+    rw [hfix, eq_div_iff (normSq_pos hM0).ne'] at hh
+    exact mul_left_cancel₀ p.2.ne' (hh.trans (mul_one _).symm)
+  have e₀ := congrArg QuaternionAlgebra.re hq
+  have e₁ := congrArg QuaternionAlgebra.imI hq
+  have e₂ := congrArg QuaternionAlgebra.imJ hq
+  have e₃ := congrArg QuaternionAlgebra.imK hq
+  rw [normSq_def'] at hN
+  simp only [Quaternion.re_mul, Quaternion.imI_mul, Quaternion.imJ_mul, Quaternion.imK_mul,
+    Quaternion.re_add, Quaternion.imI_add, Quaternion.imJ_add, Quaternion.imK_add,
+    re_coeComplex, imI_coeComplex, imJ_coeComplex, imK_coeComplex, hK] at e₀ e₁ e₂ e₃ hN
+  obtain ⟨h1, h2, h3, h4⟩ := fixed_point_real (toQ p).re (toQ p).imI (toQ p).imJ
+    (g 0 0).re (g 0 0).im (g 0 1).re (g 0 1).im (g 1 0).re (g 1 0).im (g 1 1).re (g 1 1).im
+    (toQ_imJ_pos p) (by linear_combination e₀) (by linear_combination e₁)
+    (by linear_combination e₂) (by linear_combination e₃) (by linear_combination hN)
+  refine ⟨by simpa using h1, by simpa using h2, by simpa using h3, fun htr => ?_⟩
+  have htr' : (g 0 0).re + (g 1 1).re = 2 := by simpa using congrArg Complex.re htr
+  obtain ⟨ha₁, ha₂, hb₁, hb₂, hc₁, hc₂, hd₁, hd₂⟩ := h4 htr'
+  have e00 : g 0 0 = 1 := Complex.ext (by simpa using ha₁) (by simpa using ha₂)
+  have e01 : g 0 1 = 0 := Complex.ext (by simpa using hb₁) (by simpa using hb₂)
+  have e10 : g 1 0 = 0 := Complex.ext (by simpa using hc₁) (by simpa using hc₂)
+  have e11 : g 1 1 = 1 := Complex.ext (by simpa using hd₁) (by simpa using hd₂)
+  refine Matrix.SpecialLinearGroup.ext _ _
+    (Fin.forall_fin_two.2 ⟨Fin.forall_fin_two.2 ⟨?_, ?_⟩, Fin.forall_fin_two.2 ⟨?_, ?_⟩⟩)
+  · simp [e00]
+  · simp [e01]
+  · simp [e10]
+  · simp [e11]
+
+/-- The ideal `(2 + i)` of `ℤ[i]`, of norm `5`. -/
+def idealTwoI : Ideal GaussianInt := Ideal.span {⟨2, 1⟩}
+
+/-- Every Gaussian integer is congruent modulo `2 + i` to one of `0, …, 4`, because
+`i ≡ -2` and `5 = (2 + i)(2 - i)`. -/
+instance : Finite (GaussianInt ⧸ idealTwoI) := by
+  refine Set.finite_univ_iff.1 (((Set.finite_Icc (0 : ℤ) 4).image
+    fun n : ℤ => Ideal.Quotient.mk idealTwoI (n : GaussianInt)).subset ?_)
+  rintro x -
+  obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
+  refine ⟨(z.re - 2 * z.im) % 5, ⟨by omega, by omega⟩, ?_⟩
+  show Ideal.Quotient.mk idealTwoI (((z.re - 2 * z.im) % 5 : ℤ) : GaussianInt) =
+    Ideal.Quotient.mk idealTwoI z
+  rw [Ideal.Quotient.eq, idealTwoI, Ideal.mem_span_singleton]
+  refine ⟨⟨-z.im - 2 * ((z.re - 2 * z.im) / 5), (z.re - 2 * z.im) / 5⟩, ?_⟩
+  ext <;> (simp; try omega)
+
+instance : Finite SL(2, GaussianInt ⧸ idealTwoI) :=
+  Finite.of_injective (fun (g : SL(2, GaussianInt ⧸ idealTwoI)) (i j : Fin 2) => g i j)
+    fun _ _ h => Matrix.SpecialLinearGroup.ext _ _ fun i j => congrFun (congrFun h i) j
+
+/-- The principal congruence subgroup `Γ(2 + i)` of `SL(2, ℤ[i])`: the kernel of reduction
+modulo `2 + i`. -/
+def gammaTwoIZ : Subgroup SL(2, GaussianInt) :=
+  (Matrix.SpecialLinearGroup.map (Ideal.Quotient.mk idealTwoI)).ker
+
+/-- `Γ(2 + i)` as a subgroup of `SL(2, ℂ)`, inside the Picard group. -/
+noncomputable def gammaTwoI : Subgroup SL(2, ℂ) :=
+  gammaTwoIZ.map (Matrix.SpecialLinearGroup.map GaussianInt.toComplex)
+
+theorem gammaTwoI_le_picard : gammaTwoI ≤ picard := by
+  rintro _ ⟨h, -, rfl⟩
+  exact ⟨h, rfl⟩
+
+theorem sl2Map_injective :
+    Function.Injective (Matrix.SpecialLinearGroup.map GaussianInt.toComplex :
+      SL(2, GaussianInt) →* SL(2, ℂ)) := fun g₁ g₂ h =>
+  Matrix.SpecialLinearGroup.ext _ _ fun i j => GaussianInt.toComplex_injective (by
+    simpa using congrArg (fun g : SL(2, ℂ) => g i j) h)
+
+/-- **M2.5, finite index.** `Γ(2 + i)` has finite index in the Picard group. -/
+theorem relIndex_gammaTwoI_picard : gammaTwoI.relIndex picard ≠ 0 := by
+  rw [gammaTwoI, picard, MonoidHom.range_eq_map,
+    Subgroup.relIndex_map_map_of_injective _ _ sl2Map_injective, Subgroup.relIndex_top_right]
+  show (Matrix.SpecialLinearGroup.map (Ideal.Quotient.mk idealTwoI)).ker.index ≠ 0
+  exact Subgroup.FiniteIndex.index_ne_zero
+
+theorem sub_one_mem_of_mem_gammaTwoIZ {h : SL(2, GaussianInt)} (hh : h ∈ gammaTwoIZ)
+    (i : Fin 2) : h i i - 1 ∈ idealTwoI := by
+  rw [gammaTwoIZ, MonoidHom.mem_ker] at hh
+  have e := congrArg (fun g : SL(2, GaussianInt ⧸ idealTwoI) => g i i) hh
+  simp only [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+    Matrix.SpecialLinearGroup.coe_one, Matrix.one_apply_eq] at e
+  rw [← map_one (Ideal.Quotient.mk idealTwoI), Ideal.Quotient.eq] at e
+  exact e
+
+theorem trace_sub_two_mem {h : SL(2, GaussianInt)} (hh : h ∈ gammaTwoIZ) :
+    h 0 0 + h 1 1 - 2 ∈ idealTwoI := by
+  have := add_mem (sub_one_mem_of_mem_gammaTwoIZ hh 0) (sub_one_mem_of_mem_gammaTwoIZ hh 1)
+  convert this using 1
+  ring
+
+/-- The only Gaussian integer in `[-2, 2]` congruent to `2` modulo `2 + i` is `2`: the
+difference is `-5 w₂` for the imaginary part `w₂` of the quotient, and lies in `[-4, 0]`. -/
+theorem eq_two_of_sub_two_mem {τ : GaussianInt} (hmem : τ - 2 ∈ idealTwoI) (him : τ.im = 0)
+    (hlo : -2 ≤ τ.re) (hhi : τ.re ≤ 2) : τ = 2 := by
+  rw [idealTwoI, Ideal.mem_span_singleton] at hmem
+  obtain ⟨w, hw⟩ := hmem
+  have hre := congrArg Zsqrtd.re hw
+  have hi := congrArg Zsqrtd.im hw
+  simp at hre hi
+  ext <;> simp <;> omega
+
+/-- **M2.5, freeness.** No element of `Γ(2 + i)` other than the identity fixes a point. -/
+theorem gammaTwoI_free {g : SL(2, ℂ)} (hg : g ∈ gammaTwoI) (hne : g ≠ 1) (p : H3) :
+    g • p ≠ p := by
+  intro hfix
+  obtain ⟨him, hlo, hhi, hone⟩ := fixed_point_trace g p hfix
+  refine hne (hone ?_)
+  obtain ⟨h, hh, rfl⟩ := hg
+  have htr : (Matrix.SpecialLinearGroup.map GaussianInt.toComplex h) 0 0 +
+      (Matrix.SpecialLinearGroup.map GaussianInt.toComplex h) 1 1 =
+      ((h 0 0 + h 1 1 : GaussianInt) : ℂ) := by simp
+  rw [htr] at him hlo hhi ⊢
+  rw [← GaussianInt.intCast_im] at him
+  rw [← GaussianInt.intCast_re] at hlo hhi
+  rw [eq_two_of_sub_two_mem (trace_sub_two_mem hh) (by exact_mod_cast him)
+    (by exact_mod_cast hlo) (by exact_mod_cast hhi)]
+  exact map_ofNat GaussianInt.toComplex 2
+
+/-- `Γ(2 + i)` is a Kleinian group: isometries (M2.2) preserving the volume (M2.3), acting
+freely (M2.5) and properly discontinuously (M2.4). -/
+theorem isKleinian_gammaTwoI : IsKleinian gammaTwoI where
+  isometry g p q := hdist_smul (g : SL(2, ℂ)) p q
+  measure_preserving g := measurePreserving_smul (g : SL(2, ℂ))
+  free g hg p := gammaTwoI_free g.2 (fun h => hg (Subtype.ext h)) p
+  properly_discontinuous := properlyDiscontinuous_of_le_picard gammaTwoI_le_picard
+
+end Congruence
 
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below

@@ -18,7 +18,7 @@ Legend: `M` mission targets · `S` sanity and support theorems on the bundle ·
 together with `countable_of_properlyDiscontinuous`; no hypothesis was added
 to the published statement. Commit `cd0f0c4`.
 
-### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1–M2.3 done)**
+### M2 · Milestone 2 — the set of volumes is nonempty — **in progress (M2.1–M2.4 done)**
 `hyperbolicVolumes_nonempty`. Needs a genuine lattice: `hyperbolicVolumes`
 demands finite *and* positive volume, so the trivial group (infinite
 volume) does not qualify. Chosen route: the Picard group `SL(2, ℤ[i])`, whose
@@ -50,14 +50,19 @@ Effort: months. Sub-problems, in order:
   `ContinuousLinearMap.proj` must have its ring and family pinned or
   elaboration times out, and `HasFDerivAt.inv` does not exist (use
   `hasFDerivAt_inv` with `comp`).
-- **M2.4 · The Picard group and proper discontinuity** — open. Define
-  `SL(2, ℤ[i])` as the subgroup of `SL(2, ℂ)` with entries in the image of
-  `GaussianInt.toComplex` (closed under inverse since the inverse is the
-  adjugate). Proper discontinuity: for `q` in a compact `K` (heights in
-  `[t₀, T]`, `|z| ≤ R`), `g q ∈ K` forces `|c q + d|² ≤ T/t₀`, which bounds
-  `c` then `d`; applying the same to `g⁻¹ = !![d, -b; -c, a]` bounds `a`,
-  and `b` follows from the determinant (or from the translation part when
-  `c = 0`). Finitely many Gaussian integers in a disc. ~200 lines.
+- **M2.4 · The Picard group and proper discontinuity** — **proved**
+  (`properlyDiscontinuous_of_le_picard`, `picard_properlyDiscontinuous`).
+  `picard` is the range of `SpecialLinearGroup.map GaussianInt.toComplex`, so
+  it is a subgroup for free and `SL(2, ℤ[i]) → picard` is available for
+  M2.5; `mem_picard_iff` says it is exactly the matrices with Gaussian integer
+  entries. A compact `K` lies in a box (`exists_box_of_isCompact`: heights in
+  `[t₀, T]`, `|q|² ≤ R`); if `g` moves a point of the box into it, the heights
+  give `|c q + d|² ≤ T/t₀`, and `|c q + d|² ≥ |c|² t²` bounds `c`, then `d`
+  (`bottom_row_bound`); the same for `g⁻¹ = !![d, -b; -c, a]` bounds `a`, and
+  `b = (g q)(c q + d) − a q` needs no case split on `c` (`entries_bound`).
+  All bounds go through `|x + y|² ≤ 2(|x|² + |y|²)`, so no square root is
+  taken. Stated for every subgroup of `picard`, which is the form M2.7 needs.
+  ~200 lines.
 - **M2.5 · A torsion-free finite-index subgroup** — open. Use the principal
   congruence subgroup `Γ(2+i)` (level of norm 5). Freeness: if `g p = p`
   then the `j`-component of `a p + b = p (c p + d)` gives
@@ -67,7 +72,9 @@ Effort: months. Sub-problems, in order:
   has norm `≤ 16` and only `0` is divisible by `2+i`, so `tr g = 2`, which
   with `|c z + d| = 1` forces `c = 0`, `g = ±T(b)`, then `b = 0` and `g = I`
   (`−I ∉ Γ(2+i)` since `2 ∉ (2+i)`). Finite index: `Γ(𝔞)` is the kernel of
-  reduction mod `𝔞`, `ℤ[i]/𝔞` finite. ~250 lines.
+  reduction mod `𝔞`, `ℤ[i]/𝔞` finite. Define it in `SL(2, ℤ[i])` and push it
+  into `picard` along `SpecialLinearGroup.map toComplex`, which is injective,
+  so the index carries over. ~250 lines.
 - **M2.6 · A fundamental domain of finite positive volume** — open; the long
   pole. Big group: `PSL(2, ℤ[i]) := SL(2, ℤ[i]) ⧸ {±I}`, acting through
   `Quotient.lift` since `−I` acts trivially (the L4 trap). Domain: the
@@ -90,7 +97,8 @@ Effort: months. Sub-problems, in order:
   ~800 lines.
 - **M2.7 · Assemble** `hyperbolicVolumes_nonempty` from M2.1–M2.6: `IsKleinian`
   for `Γ(2+i)` is M2.2 (isometry), M2.3 (measure preservation), M2.5
-  (freeness), M2.4 restricted to a subgroup (proper discontinuity). ~50 lines.
+  (freeness), `properlyDiscontinuous_of_le_picard` (proper discontinuity).
+  ~50 lines.
 
 ### M3 · Goal — some two volumes have irrational ratio — **open mathematics**
 `thurston_question_23`, `thurston_question_23_strong`. Not a formalization

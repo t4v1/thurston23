@@ -20,7 +20,7 @@ to the published statement. Commit `cd0f0c4`.
 
 ### M2 · Milestone 2 — the set of volumes is nonempty — **proved**
 `hyperbolicVolumes_nonempty`, axiom-clean, with no change to the published
-statement. Needs a genuine lattice: `hyperbolicVolumes`
+statement. Accepted on Prove2Me 2026-09-11 (submission `97863b86`). Needs a genuine lattice: `hyperbolicVolumes`
 demands finite *and* positive volume, so the trivial group (infinite
 volume) does not qualify. Route taken: the congruence subgroup `Γ(2+i)` of the
 Picard group `SL(2, ℤ[i])`, whose reduction theory is the Euclidean algorithm
@@ -222,15 +222,22 @@ Multi-year.
 
 ## D — Documentation
 
-### D1 · The docstring misquotes Thurston — **fixed in the repo** (`7b077a1`); platform copy still pending
-Module docstring, `README.md`, and `mission.md` say Thurston asked whether
-volumes are "rationally independent" and then correct that reading. His
+### D1 · The docstring misquotes Thurston — **fixed** (repo `7b077a1`, platform 2026-09-11)
+Module docstring, `README.md`, and `mission.md` said Thurston asked whether
+volumes are "rationally independent" and then corrected that reading. His
 actual wording (BAMS 1982, p. 380, `refs/`) is *"not all rationally
 related"* — the paraphrase is Wikipedia's. The Lean statements are faithful.
 Fixed in the module docstring, the goal docstring, the README and
-`mission.md`. The copy of `mission.md` on Prove2Me still carries the old
-wording; editing the published item resets its confirmation, so that waits
-for the next forced re-audit.
+`mission.md`; the live mission description was replaced with `mission.md`
+through `PATCH /missions/:id`, which touches no published item. The same edit
+narrowed an overstatement in *Significance*: sharing an invariant trace field
+forces rationally related volumes only when that field has a single complex
+place.
+
+The published goal's docstring and natural-language statement (immutable)
+already open with "not all rationally related"; they mention "rationally
+independent" only as the literal reading that is false, not as Thurston's
+words, so they need no change.
 
 ---
 

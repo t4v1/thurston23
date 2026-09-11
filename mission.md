@@ -63,8 +63,9 @@ covolume as $|\delta_F|^{3/2}\zeta_F(2)/4\pi^2$, so the ratio of two such
 volumes is, up to explicit algebraic factors, a ratio of Dedekind zeta values at
 $2$; and Neumann and Yang showed that the Bloch invariant of a hyperbolic
 $3$-manifold lies in a subgroup of finite $\mathbb{Q}$-rank determined by its
-invariant trace field, so that manifolds sharing a trace field have rationally
-related volumes by construction. Producing one irrational ratio therefore means
+invariant trace field, so that manifolds sharing an invariant trace field with a
+single complex place, such as an imaginary quadratic one, have rationally
+related volumes. Producing one irrational ratio therefore means
 separating two such transcendentals — a statement of the same order of
 difficulty as the irrationality of $\zeta(5)$. The value of formalizing the
 question is not that it will be closed, but that its statement, and the

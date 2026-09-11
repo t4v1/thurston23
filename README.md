@@ -33,7 +33,9 @@ common in secondary sources, is not Thurston's, and read literally is false.)
 **Sanity check.** `hvol_cusp_box` — the unit cusp box `[0,1]² × [1,∞)` has
 hyperbolic volume `1/2`, so `hvol`, which is built with `Measure.comap`, is not
 the zero measure (`hvol_ne_zero`). Nothing else in the bundle evaluates `hvol`
-on a concrete set.
+on a concrete set. `hdist_ofUpperHalfPlane` — on the vertical slice `y = 0`,
+`hdist` is Mathlib's `UpperHalfPlane.dist`, so the hand-written metric agrees
+with a reviewed one.
 
 **Commensurability.** `hvol_ratio_rational_of_commensurable` — subgroups of one
 Kleinian group with a common finite-index subgroup have quotients of rationally

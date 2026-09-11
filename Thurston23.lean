@@ -32,8 +32,10 @@ Two milestones are stated: that passing to a subgroup of index `n` multiplies
 the volume by `n`, which is the source of every known rational relation between
 volumes, and that the set of volumes is nonempty, without which the goal would
 be vacuous. Milestone 1 is proved below, from a general fact about fundamental
-domains of a finite-index subgroup that Mathlib does not have, and `hvol` is
-checked against one explicit value, the volume of a cusp box. The positive half of
+domains of a finite-index subgroup that Mathlib does not have. Two sanity
+checks pin down the hand-written definitions: `hvol` gives a cusp box its
+expected volume, and `hdist` restricts to Mathlib's metric on the upper
+half-plane. The positive half of
 Thurston's framing is also proved: commensurable subgroups of a Kleinian group
 have rationally related volumes.
 
@@ -344,6 +346,37 @@ theorem hvol_ne_zero : hvol ≠ 0 := by
   exact (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top) this.symm
 
 end CuspBox
+
+/-! ## A sanity check on `hdist`
+
+`hdist` is written out by hand, so it is checked against the one reviewed
+hyperbolic metric Mathlib has: on the vertical slice `y = 0`, which is a copy of
+the upper half-plane, it restricts to `UpperHalfPlane.dist`. Both sides have
+`cosh` equal to `1 + |z - w|² / (2 Im z Im w)` (Mathlib's `cosh_dist`), and the
+logarithm in `hdist` is `arcosh`, which inverts `cosh` on `[0, ∞)`. -/
+
+section UpperHalfPlaneSlice
+
+/-- The upper half-plane as the vertical slice `y = 0` of `H3`. -/
+def ofUpperHalfPlane (z : UpperHalfPlane) : H3 := ⟨![z.re, 0, z.im], by simpa using z.im_pos⟩
+
+/-- On the slice `y = 0`, `hdist` is Mathlib's hyperbolic distance on the upper half-plane. -/
+theorem hdist_ofUpperHalfPlane (z w : UpperHalfPlane) :
+    hdist (ofUpperHalfPlane z) (ofUpperHalfPlane w) = dist z w := by
+  have hsum : ∑ i, ((ofUpperHalfPlane z).1 i - (ofUpperHalfPlane w).1 i) ^ 2
+      = dist (z : ℂ) w ^ 2 := by
+    rw [Complex.dist_eq, Complex.sq_norm, Complex.normSq_apply, Fin.sum_univ_three]
+    simp [ofUpperHalfPlane]
+    ring
+  have hc : 1 + (∑ i, ((ofUpperHalfPlane z).1 i - (ofUpperHalfPlane w).1 i) ^ 2) /
+      (2 * (ofUpperHalfPlane z).1 2 * (ofUpperHalfPlane w).1 2) = Real.cosh (dist z w) := by
+    rw [UpperHalfPlane.cosh_dist, hsum]
+    simp [ofUpperHalfPlane]
+  show Real.arcosh _ = _
+  rw [hc]
+  exact Real.arcosh_cosh dist_nonneg
+
+end UpperHalfPlaneSlice
 
 /-! ## Milestones -/
 

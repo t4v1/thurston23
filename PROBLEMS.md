@@ -127,13 +127,16 @@ independence conjecture (now Chowla–Milnor), which is open.
 `hvol_ratio_rational_of_commensurable`. The positive half of Thurston's
 framing. Converse is false (Ruberman). Commit `2a25c3f`.
 
-### S3 · `hdist` agrees with Mathlib's `UpperHalfPlane.dist` on the `y = 0` slice — **open**
-Statement: for `z w : ℍ`, `hdist ⟨![z.re, 0, z.im], _⟩ ⟨![w.re, 0, w.im], _⟩ = dist z w`.
-Mathlib's distance is `2 · arsinh(|z−w| / 2√(Im z · Im w))`; the bundle's is
-`arcosh` of `1 + |p−q|²/(2 p₃ q₃)` written as a logarithm. Bridge:
-`cosh d = 1 + 2 sinh²(d/2)`. The only available certification of the
-bundle's metric against a reviewed definition. Effort: an afternoon of real
-analysis.
+### S3 · `hdist` agrees with Mathlib's `UpperHalfPlane.dist` on the `y = 0` slice — **proved**
+`hdist_ofUpperHalfPlane`: for `z w : UpperHalfPlane`,
+`hdist (ofUpperHalfPlane z) (ofUpperHalfPlane w) = dist z w`, where
+`ofUpperHalfPlane z = ⟨![z.re, 0, z.im], _⟩`. The only available
+certification of the bundle's metric against a reviewed definition. No real
+analysis was needed: Mathlib already has
+`UpperHalfPlane.cosh_dist : cosh (dist z w) = 1 + |z − w|² / (2 Im z Im w)`,
+which is exactly the bundle's `cosh` argument on the slice, and the logarithm
+in `hdist` is by definition `Real.arcosh`, so `Real.arcosh_cosh` finishes.
+About 20 lines.
 
 ### S4 · Two explicit Kleinian groups — **open**
 (i) `isKleinian_unit : IsKleinian Unit` — minutes.

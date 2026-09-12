@@ -152,9 +152,16 @@ nontrivial inhabitant of `IsKleinian`, and `IsKleinian.subgroup` gives the
 Kleinian half of (ii) for any translation subgroup of `Γ(2+i)`; only the
 infinite-volume fundamental domain would remain.
 
-### S5 · `hvol.IsOpenPosMeasure` — **open**
-Every nonempty open set has positive volume. Not given by S1. Small; useful
-for S4(ii) and for any future positivity argument.
+### S5 · `hvol.IsOpenPosMeasure` — **proved**
+Every nonempty open set has positive volume (the instance, and
+`hvol_pos_of_isOpen`). Not given by S1, which only rules out the zero measure.
+Two Mathlib lemmas and no computation: Lebesgue measure restricted to the open
+half-space is open-positive (`IsOpenPosMeasure.comap` along
+`isOpenEmbedding_subtypeVal`), and since the density `t⁻³` vanishes nowhere,
+Lebesgue measure is absolutely continuous with respect to `hvol`
+(`withDensity_absolutelyContinuous'`), which transfers the property
+(`AbsolutelyContinuous.isOpenPosMeasure`). About 12 lines. Useful for S4(ii)
+and for any future positivity argument.
 
 ---
 

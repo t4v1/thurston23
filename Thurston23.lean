@@ -347,6 +347,24 @@ theorem hvol_ne_zero : hvol ≠ 0 := by
 
 end CuspBox
 
+/-- Every nonempty open subset of `H3` has positive hyperbolic volume. Lebesgue
+measure has this property, it survives restriction to the open half-space, and
+the density `t⁻³` vanishes nowhere, so Lebesgue measure is absolutely continuous
+with respect to `hvol`. -/
+instance : hvol.IsOpenPosMeasure := by
+  haveI : ((volume : Measure (Fin 3 → ℝ)).comap Subtype.val : Measure H3).IsOpenPosMeasure :=
+    .comap _ isOpen_upperHalfSpace.isOpenEmbedding_subtypeVal
+  have hmeas : Measurable fun p : H3 => ENNReal.ofReal ((p.1 2) ^ (3 : ℕ))⁻¹ :=
+    (((measurable_pi_apply 2).comp measurable_subtype_coe).pow_const 3).inv.ennreal_ofReal
+  show (((volume : Measure (Fin 3 → ℝ)).comap Subtype.val).withDensity
+    fun p : H3 => ENNReal.ofReal ((p.1 2) ^ (3 : ℕ))⁻¹).IsOpenPosMeasure
+  exact (withDensity_absolutelyContinuous' hmeas.aemeasurable
+    (ae_of_all _ fun p => (ENNReal.ofReal_pos.2 (inv_pos.2 (pow_pos p.2 3))).ne')).isOpenPosMeasure
+
+/-- A nonempty open subset of `H3` has positive hyperbolic volume. -/
+theorem hvol_pos_of_isOpen {U : Set H3} (hU : IsOpen U) (hne : U.Nonempty) : 0 < hvol U :=
+  hU.measure_pos hvol hne
+
 /-! ## A sanity check on `hdist`
 
 `hdist` is written out by hand, so it is checked against the one reviewed

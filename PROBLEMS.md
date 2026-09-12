@@ -262,8 +262,23 @@ The proof, in four steps:
    (`abs_log_norm_le`), integrable by `intervalIntegrable_log_sin`. Uniqueness of
    limits closes it; `norm_one_sub_exp` is the boundary value `‖1 - e^{2iθ}‖ = 2 sin θ`.
 
-**What remains for H5** is the geometric half, and it is now the only thing between
-the bundle and the platform child: polar coordinates on the box
+**The geometric half, started.** `lintegral_Ici_inv_cube`: `∫_{t ≥ a} t⁻³ dt = 1/(2a²)`
+for `a > 0`, in `ℝ≥0∞` form, which is the vertical integral of every region lying above
+a graph — the first step of the reduction of `hvol` to a plane integral.
+
+**What remains for H5:**
+
+1. *3D → 2D.* `hvol` of `{(x, y, t) : (x,y) ∈ D, t ≥ g(x,y)}` equals
+   `∫ 1/(2 g(x,y)²)` over `D`. Tonelli through
+   `volume_preserving_piFinSuccAbove` and `volume_preserving_finTwoArrow`, with
+   `lintegral_Ici_inv_cube` on the inner integral. This is the plumbing-heavy step.
+2. *Polar coordinates.* `lintegral_comp_polarCoord_symm` on the plane integral. The
+   half box is not a polar rectangle, so the angle range splits into sectors where the
+   radial bound is `1/(2 cos θ)` or `1/(2 sin θ)`.
+3. *Trigonometry.* `1 + 2 cos 2θ = sin 3θ / sin θ` turns each sector into log-sine
+   integrals, which the values below evaluate.
+
+and the log-sine values it needs: polar coordinates on the box
 (`lintegral_comp_polarCoord_symm`), the identity `1 + 2 cos 2θ = sin 3θ / sin θ`, and
 assembling the three log-sine values — the `π/4` one above, the `π/2` one from
 Mathlib, and `∫₀^{π/4} log (2 sin 3θ) dθ = (1/3)∫₀^{3π/4} log (2 sin u) du`, which

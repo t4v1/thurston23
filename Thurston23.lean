@@ -2761,6 +2761,48 @@ theorem hvol_halfBox_lt_top : hvol halfBox < ⊤ := by
   rintro p ⟨hx, hy0, hy1, hN⟩
   exact ⟨hx, abs_le.2 ⟨by linarith, hy1⟩, hN⟩
 
+/-! ### Towards the covolume: the vertical integral
+
+The volume of a region lying above a graph reduces to a plane integral, because the
+height integral has a closed form. This is the first step of H5, the evaluation of
+the box's volume as `G/3`; see `PROBLEMS.md`. -/
+
+
+/-- `∫_{t ≥ a} t⁻³ dt = 1/(2a²)` for `a > 0`, as a lower Lebesgue integral. -/
+theorem lintegral_Ici_inv_cube {a : ℝ} (ha : 0 < a) :
+    ∫⁻ t in Set.Ici a, ENNReal.ofReal ((t ^ (3:ℕ))⁻¹) = ENNReal.ofReal ((2 * a ^ 2)⁻¹) := by
+  have hInt : IntegrableOn (fun t : ℝ => (t ^ (3:ℕ))⁻¹) (Set.Ioi a) := by
+    refine (integrableOn_Ioi_rpow_of_lt (a := -3) (by norm_num) ha).congr_fun (fun t ht => ?_)
+      measurableSet_Ioi
+    have ht0 : (0:ℝ) < t := lt_trans ha ht
+    rw [Real.rpow_neg ht0.le]
+    norm_num [Real.rpow_natCast]
+  have hval : ∫ t in Set.Ioi a, (t ^ (3:ℕ))⁻¹ = (2 * a ^ 2)⁻¹ := by
+    have h := integral_Ioi_rpow_of_lt (a := -3) (by norm_num) ha
+    rw [show ∫ t in Set.Ioi a, (t ^ (3:ℕ))⁻¹ = ∫ t in Set.Ioi a, t ^ (-3 : ℝ) from
+      setIntegral_congr_fun measurableSet_Ioi (fun t ht => ?_)]
+    · rw [h]
+      have ha0 : a ≠ 0 := ne_of_gt ha
+      have h2 : a ^ ((-3 : ℝ) + 1) = (a ^ 2)⁻¹ := by
+        rw [show ((-3:ℝ) + 1) = -((2:ℕ) : ℝ) by norm_num, Real.rpow_neg ha.le,
+          Real.rpow_natCast]
+      rw [h2]
+      field_simp
+      try ring
+    · have ht0 : (0:ℝ) < t := lt_trans ha ht
+      rw [Real.rpow_neg ht0.le]
+      norm_num [Real.rpow_natCast]
+  have hIci : ∫⁻ t in Set.Ici a, ENNReal.ofReal ((t ^ (3:ℕ))⁻¹)
+      = ∫⁻ t in Set.Ioi a, ENNReal.ofReal ((t ^ (3:ℕ))⁻¹) := by
+    rw [← Set.Ioi_union_left, lintegral_union (measurableSet_singleton a)]
+    · simp
+    · exact Set.disjoint_singleton_right.2 (by simp)
+  rw [hIci, ← ofReal_integral_eq_lintegral_ofReal hInt]
+  · rw [hval]
+  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t ht
+    have ht0 : (0:ℝ) < t := lt_trans ha ht
+    positivity
+
 end PicardFundamentalDomain
 
 

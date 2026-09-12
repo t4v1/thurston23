@@ -2803,6 +2803,160 @@ theorem lintegral_Ici_inv_cube {a : ℝ} (ha : 0 < a) :
     have ht0 : (0:ℝ) < t := lt_trans ha ht
     positivity
 
+
+/-- `ℝ³ ≃ ℝ × ℝ²`, splitting off the height. -/
+noncomputable def splitEquiv : (Fin 3 → ℝ) ≃ᵐ ℝ × (ℝ × ℝ) :=
+  (MeasurableEquiv.piFinSuccAbove (fun _ : Fin 3 => ℝ) 2).trans
+    (MeasurableEquiv.prodCongr (MeasurableEquiv.refl ℝ) MeasurableEquiv.finTwoArrow)
+
+theorem measurePreserving_splitEquiv :
+    MeasurePreserving splitEquiv (volume : Measure (Fin 3 → ℝ))
+      ((volume : Measure ℝ).prod (volume : Measure (ℝ × ℝ))) := by
+  have h1 := volume_preserving_piFinSuccAbove (fun _ : Fin 3 => ℝ) 2
+  have h2 : MeasurePreserving
+      (Prod.map (id : ℝ → ℝ) (MeasurableEquiv.finTwoArrow : (Fin 2 → ℝ) → ℝ × ℝ))
+      ((volume : Measure ℝ).prod (volume : Measure (Fin 2 → ℝ)))
+      ((volume : Measure ℝ).prod (volume : Measure (ℝ × ℝ))) :=
+    (MeasurePreserving.id _).prod (volume_preserving_finTwoArrow ℝ)
+  exact h2.comp h1
+
+theorem splitEquiv_apply (x : Fin 3 → ℝ) : splitEquiv x = (x 2, (x 0, x 1)) := rfl
+
+/-- **H5, step 1.** The hyperbolic volume of `{(x, y, t) : (x, y) ∈ D, g (x, y) ≤ t}`
+is `∫_D dx dy / (2 g(x,y)²)`: the height integral has the closed form
+`∫_{t ≥ a} t⁻³ dt = 1/(2a²)`, and the rest is Tonelli. -/
+theorem hvol_above_graph {D : Set (ℝ × ℝ)} (hD : MeasurableSet D) {g : ℝ × ℝ → ℝ}
+    (hgm : Measurable g) (hgpos : ∀ z ∈ D, 0 < g z) :
+    hvol {p : H3 | ((p.1 0, p.1 1) ∈ D) ∧ g (p.1 0, p.1 1) ≤ p.1 2}
+      = ∫⁻ z in D, ENNReal.ofReal ((2 * g z ^ 2)⁻¹) := by
+  classical
+  set A : Set (Fin 3 → ℝ) := {x | ((x 0, x 1) ∈ D) ∧ g (x 0, x 1) ≤ x 2} with hA
+  set B : Set (ℝ × (ℝ × ℝ)) := {y | y.2 ∈ D ∧ g y.2 ≤ y.1} with hB
+  set σ : ℝ × (ℝ × ℝ) → ENNReal := fun y => ENNReal.ofReal ((y.1 ^ (3:ℕ))⁻¹) with hσ
+  have hc0 : Measurable fun x : Fin 3 → ℝ => (x 0, x 1) :=
+    (measurable_pi_apply 0).prodMk (measurable_pi_apply 1)
+  have hAm : MeasurableSet A :=
+    (hc0 hD).inter (measurableSet_le (hgm.comp hc0) (measurable_pi_apply 2))
+  have hBm : MeasurableSet B :=
+    ((measurable_snd hD)).inter (measurableSet_le (hgm.comp measurable_snd) measurable_fst)
+  have hσm : Measurable σ := (measurable_fst.pow_const 3).inv.ennreal_ofReal
+  -- the region sits over the half-space, so preimage and image match up
+  have hAsub : A ⊆ Set.range (Subtype.val : H3 → Fin 3 → ℝ) := by
+    rintro x ⟨hxD, hxg⟩
+    exact ⟨⟨x, lt_of_lt_of_le (hgpos _ hxD) hxg⟩, rfl⟩
+  have himg : Subtype.val '' (Subtype.val ⁻¹' A : Set H3) = A := by
+    rw [Set.image_preimage_eq_inter_range, Set.inter_eq_left.2 hAsub]
+  -- transport to `ℝ³`
+  have step1 : hvol {p : H3 | ((p.1 0, p.1 1) ∈ D) ∧ g (p.1 0, p.1 1) ≤ p.1 2}
+      = ∫⁻ x in A, ρ x := by
+    rw [show {p : H3 | ((p.1 0, p.1 1) ∈ D) ∧ g (p.1 0, p.1 1) ≤ p.1 2}
+        = Subtype.val ⁻¹' A from rfl, hvol_apply (measurable_subtype_coe hAm), himg]
+  -- the integrand transported along the splitting
+  have hpt : ∀ x : Fin 3 → ℝ, A.indicator ρ x = B.indicator σ (splitEquiv x) := by
+    intro x
+    rw [splitEquiv_apply]
+    by_cases hx : x ∈ A
+    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem (by exact hx)]
+      rfl
+    · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem (by exact hx)]
+  -- Tonelli, with the height innermost
+  have step2 : ∫⁻ x in A, ρ x = ∫⁻ z : ℝ × ℝ, ∫⁻ t : ℝ, B.indicator σ (t, z) := by
+    rw [← lintegral_indicator hAm]
+    calc ∫⁻ x, A.indicator ρ x
+        = ∫⁻ x, B.indicator σ (splitEquiv x) := lintegral_congr hpt
+      _ = ∫⁻ y, B.indicator σ y ∂((volume : Measure ℝ).prod (volume : Measure (ℝ × ℝ))) :=
+          measurePreserving_splitEquiv.lintegral_comp (hσm.indicator hBm)
+      _ = ∫⁻ z : ℝ × ℝ, ∫⁻ t : ℝ, B.indicator σ (t, z) :=
+          lintegral_prod_symm _ (hσm.indicator hBm).aemeasurable
+  -- the inner integral, by the closed form of the height integral
+  have step3 : ∀ z : ℝ × ℝ, (∫⁻ t : ℝ, B.indicator σ (t, z))
+      = D.indicator (fun z => ENNReal.ofReal ((2 * g z ^ 2)⁻¹)) z := by
+    intro z
+    by_cases hz : z ∈ D
+    · rw [Set.indicator_of_mem hz]
+      have hfun : ∀ t : ℝ, B.indicator σ (t, z)
+          = (Set.Ici (g z)).indicator (fun t => ENNReal.ofReal ((t ^ (3:ℕ))⁻¹)) t := by
+        intro t
+        by_cases ht : g z ≤ t
+        · rw [Set.indicator_of_mem (show (t, z) ∈ B from ⟨hz, ht⟩),
+            Set.indicator_of_mem (show t ∈ Set.Ici (g z) from ht)]
+        · rw [Set.indicator_of_notMem (fun h => ht h.2),
+            Set.indicator_of_notMem (show t ∉ Set.Ici (g z) from ht)]
+      simp_rw [hfun]
+      rw [lintegral_indicator measurableSet_Ici]
+      exact lintegral_Ici_inv_cube (hgpos z hz)
+    · rw [Set.indicator_of_notMem hz]
+      have hfun : ∀ t : ℝ, B.indicator σ (t, z) = 0 := by
+        intro t
+        exact Set.indicator_of_notMem (fun h => hz h.1) _
+      simp_rw [hfun]
+      simp
+  rw [step1, step2]
+  simp_rw [step3]
+  rw [lintegral_indicator hD]
+
+/-- The plane region under the half box: `|x| ≤ ½`, `0 ≤ y ≤ ½`. -/
+def boxBase : Set (ℝ × ℝ) := Set.Icc (-(1/2) : ℝ) (1/2) ×ˢ Set.Icc (0:ℝ) (1/2)
+
+theorem measurableSet_boxBase : MeasurableSet boxBase :=
+  measurableSet_Icc.prod measurableSet_Icc
+
+/-- On the base, `1 - x² - y² ≥ ½`. -/
+theorem boxBase_pos {z : ℝ × ℝ} (hz : z ∈ boxBase) : 1 / 2 ≤ 1 - z.1 ^ 2 - z.2 ^ 2 := by
+  obtain ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩ := hz
+  nlinarith [h1, h2, h3, h4]
+
+/-- The half box is the region above the graph of `√(1 - x² - y²)` over the base. -/
+theorem halfBox_eq_above_graph :
+    halfBox = {p : H3 | ((p.1 0, p.1 1) ∈ boxBase) ∧
+      Real.sqrt (1 - (p.1 0) ^ 2 - (p.1 1) ^ 2) ≤ p.1 2} := by
+  ext p
+  have ht : 0 < p.1 2 := p.2
+  constructor
+  · rintro ⟨hx, hy0, hy1, hN⟩
+    have hxmem : (p.1 0, p.1 1) ∈ boxBase := by
+      obtain ⟨hx1, hx2⟩ := abs_le.1 hx
+      exact ⟨⟨by linarith, by linarith⟩, ⟨hy0, hy1⟩⟩
+    refine ⟨hxmem, ?_⟩
+    have hNval : N p.1 = p.1 0 * p.1 0 + p.1 1 * p.1 1 + p.1 2 * p.1 2 := rfl
+    have hsq : 1 - (p.1 0) ^ 2 - (p.1 1) ^ 2 ≤ (p.1 2) ^ 2 := by
+      rw [hNval] at hN
+      nlinarith [hN]
+    calc Real.sqrt (1 - (p.1 0) ^ 2 - (p.1 1) ^ 2)
+        ≤ Real.sqrt ((p.1 2) ^ 2) := Real.sqrt_le_sqrt hsq
+      _ = p.1 2 := Real.sqrt_sq ht.le
+  · rintro ⟨hz, hge⟩
+    obtain ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩ := hz
+    have hpos : 0 ≤ 1 - (p.1 0) ^ 2 - (p.1 1) ^ 2 := by
+      have := boxBase_pos (z := (p.1 0, p.1 1)) ⟨⟨h1, h2⟩, ⟨h3, h4⟩⟩
+      simp only at this
+      linarith
+    have hsq : 1 - (p.1 0) ^ 2 - (p.1 1) ^ 2 ≤ (p.1 2) ^ 2 := by
+      have h := Real.sq_sqrt hpos
+      nlinarith [hge, Real.sqrt_nonneg (1 - (p.1 0) ^ 2 - (p.1 1) ^ 2), h]
+    have hNval : N p.1 = p.1 0 * p.1 0 + p.1 1 * p.1 1 + p.1 2 * p.1 2 := rfl
+    refine ⟨abs_le.2 ⟨by linarith, by linarith⟩, h3, h4, ?_⟩
+    rw [hNval]
+    nlinarith [hsq]
+
+/-- **The volume of the half box as a plane integral.** This is what the polar
+decomposition and the log-sine values are meant to evaluate: the answer should be
+`G/3`, `G` Catalan's constant. -/
+theorem hvol_halfBox_eq_plane_integral :
+    hvol halfBox = ∫⁻ z in boxBase, ENNReal.ofReal ((2 * (1 - z.1 ^ 2 - z.2 ^ 2))⁻¹) := by
+  have hgm : Measurable fun z : ℝ × ℝ => Real.sqrt (1 - z.1 ^ 2 - z.2 ^ 2) := by
+    fun_prop
+  have hgpos : ∀ z ∈ boxBase, 0 < Real.sqrt (1 - z.1 ^ 2 - z.2 ^ 2) := by
+    intro z hz
+    have := boxBase_pos hz
+    exact Real.sqrt_pos.2 (by linarith)
+  rw [halfBox_eq_above_graph, hvol_above_graph measurableSet_boxBase hgm hgpos]
+  refine setLIntegral_congr_fun measurableSet_boxBase fun z hz => ?_
+  have hpos : 0 ≤ 1 - z.1 ^ 2 - z.2 ^ 2 := by
+    have := boxBase_pos hz
+    linarith
+  rw [Real.sq_sqrt hpos]
+
 end PicardFundamentalDomain
 
 

@@ -268,10 +268,19 @@ a graph — the first step of the reduction of `hvol` to a plane integral.
 
 **What remains for H5:**
 
-1. *3D → 2D.* `hvol` of `{(x, y, t) : (x,y) ∈ D, t ≥ g(x,y)}` equals
-   `∫ 1/(2 g(x,y)²)` over `D`. Tonelli through
-   `volume_preserving_piFinSuccAbove` and `volume_preserving_finTwoArrow`, with
-   `lintegral_Ici_inv_cube` on the inner integral. This is the plumbing-heavy step.
+1. *3D → 2D* — **proved.** `hvol_above_graph`: the volume of
+   `{(x, y, t) : (x,y) ∈ D, g(x,y) ≤ t}` is `∫_D 1/(2 g²)`. `splitEquiv` is the
+   measure-preserving `ℝ³ ≃ ℝ × ℝ²` built from `volume_preserving_piFinSuccAbove`
+   and `volume_preserving_finTwoArrow`; Tonelli (`lintegral_prod_symm`) puts the
+   height innermost and `lintegral_Ici_inv_cube` evaluates it. Specialized in
+   `hvol_halfBox_eq_plane_integral`:
+
+   ```lean
+   hvol halfBox = ∫⁻ z in boxBase, ENNReal.ofReal ((2 * (1 - z.1^2 - z.2^2))⁻¹)
+   ```
+
+   over `boxBase = [-½, ½] × [0, ½]`, via `halfBox_eq_above_graph`
+   (`1 ≤ |q|` is `√(1 - x² - y²) ≤ t` on the half-space).
 2. *Polar coordinates.* `lintegral_comp_polarCoord_symm` on the plane integral. The
    half box is not a polar rectangle, so the angle range splits into sectors where the
    radial bound is `1/(2 cos θ)` or `1/(2 sin θ)`.

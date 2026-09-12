@@ -235,12 +235,41 @@ box; `measure_eq_index_smul` (M1) gives the volume; and
 itself, which is legitimate because `Γ(2+i) → PicardEff` is injective: an element
 of `Γ(2+i)` acting trivially fixes a point, so it is the identity by freeness.
 
-### H5 · `vol(half box) = G/3` — **open, and the hard one**
-Reduces to `∫∫ dx dy / (2(1 - x² - y²))` over `[-½,½] × [0,½]`, which must be
-identified with `Σ (-1)ⁿ/(2n+1)² / 3`. Mathlib has no machinery for this class of
-integral, and the classical derivation goes through Eisenstein series and
-`ζ_K(2)` rather than the integral. Research-grade on its own; H1–H4 do not
-depend on it, and without it the platform child stays open.
+### H5 · `vol(half box) = G/3` — **open; the analytic core is proved**
+
+`CatalanLogSin.lean` (347 lines, Mathlib only, no dependency on the bundle) proves
+
+```lean
+integral_log_two_sin : ∫ θ in (0:ℝ)..(π/4), log (2 * sin θ) = -(catalan / 2)
+```
+
+where `catalan = ∑ (-1)ⁿ/(2n+1)²` is defined there. Axiom-clean. Mathlib has the
+value at `π/2` (`integral_log_sin_zero_pi_div_two`) but nothing at `π/4`, and no
+Catalan constant, Clausen or Lobachevsky function.
+
+The proof, in four steps:
+
+1. `hasSum_neg_log_norm_circle`: the real part of the Taylor series of `-log (1 - z)`
+   on the circle of radius `r < 1`, `-log ‖1 - r e^{iφ}‖ = ∑ rⁿ cos(nφ)/n`.
+2. `integral_arc`: term-by-term integration over `θ ∈ [0, π/4]`, giving
+   `∑ rⁿ sin(nπ/2)/(2n²)` for `|r| < 1`. The exchange is `integral_tsum` against a
+   geometric bound.
+3. `hasSum_boundary`: at `r = 1` the series is `G/2` (reindex to odd `n`, where
+   `sin(nπ/2) = (-1)ᵐ`). Abel's limit theorem (`Real.tendsto_tsum_powerSeries_nhdsWithin_lt`)
+   carries this to the limit `r → 1⁻` on the series side.
+4. The integral side converges to `∫ log (2 sin θ)` by dominated convergence, with
+   bound `log 2 + |log (sin 2θ)|` from `‖1 - r e^{iφ}‖² - sin²φ = (r - cos φ)²`
+   (`abs_log_norm_le`), integrable by `intervalIntegrable_log_sin`. Uniqueness of
+   limits closes it; `norm_one_sub_exp` is the boundary value `‖1 - e^{2iθ}‖ = 2 sin θ`.
+
+**What remains for H5** is the geometric half, and it is now the only thing between
+the bundle and the platform child: polar coordinates on the box
+(`lintegral_comp_polarCoord_symm`), the identity `1 + 2 cos 2θ = sin 3θ / sin θ`, and
+assembling the three log-sine values — the `π/4` one above, the `π/2` one from
+Mathlib, and `∫₀^{π/4} log (2 sin 3θ) dθ = (1/3)∫₀^{3π/4} log (2 sin u) du`, which
+needs the same machinery at `3π/4` (by periodicity and oddness of Λ, it is `-G/2`
+again). Checked numerically: the combination gives `2G/3` for the full box, `G/3`
+for the half.
 
 ---
 

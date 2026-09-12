@@ -2957,6 +2957,39 @@ theorem hvol_halfBox_eq_plane_integral :
     linarith
   rw [Real.sq_sqrt hpos]
 
+/-! ### Towards the covolume: the radial integral
+
+In polar coordinates the plane integral above has inner integral
+`∫₀^R r dr / (2(1 - r²)) = -¼ log (1 - R²)`, which is where the logarithm that
+becomes a log-sine integral first appears. -/
+
+
+theorem integral_radial {R : ℝ} (h0 : 0 ≤ R) (h1 : R < 1) :
+    ∫ r in (0:ℝ)..R, r / (2 * (1 - r ^ 2)) = -(1/4) * Real.log (1 - R ^ 2) := by
+  have hpos : ∀ r ∈ Set.uIcc (0:ℝ) R, 0 < 1 - r ^ 2 := by
+    intro r hr
+    rw [Set.uIcc_of_le h0] at hr
+    obtain ⟨hr0, hr1⟩ := hr
+    nlinarith [hr0, hr1, h1]
+  have hderiv : ∀ r ∈ Set.uIcc (0:ℝ) R,
+      HasDerivAt (fun r : ℝ => -(1/4) * Real.log (1 - r ^ 2)) (r / (2 * (1 - r ^ 2))) r := by
+    intro r hr
+    have hne : (1 - r ^ 2) ≠ 0 := ne_of_gt (hpos r hr)
+    have h1' : HasDerivAt (fun r : ℝ => 1 - r ^ 2) (-(2 * r)) r := by
+      simpa using ((hasDerivAt_pow 2 r).const_sub 1)
+    have h2 : HasDerivAt (fun r : ℝ => Real.log (1 - r ^ 2)) (-(2 * r) / (1 - r ^ 2)) r :=
+      h1'.log hne
+    have h3 := h2.const_mul (-(1/4) : ℝ)
+    convert h3 using 1
+    field_simp
+    ring
+  have hcont : ContinuousOn (fun r : ℝ => r / (2 * (1 - r ^ 2))) (Set.uIcc 0 R) := by
+    refine ContinuousOn.div continuousOn_id (by fun_prop) fun r hr => ?_
+    have := hpos r hr
+    positivity
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable]
+  simp
+
 end PicardFundamentalDomain
 
 

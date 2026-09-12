@@ -281,9 +281,15 @@ a graph — the first step of the reduction of `hvol` to a plane integral.
 
    over `boxBase = [-½, ½] × [0, ½]`, via `halfBox_eq_above_graph`
    (`1 ≤ |q|` is `√(1 - x² - y²) ≤ t` on the half-space).
-2. *Polar coordinates.* `lintegral_comp_polarCoord_symm` on the plane integral. The
-   half box is not a polar rectangle, so the angle range splits into sectors where the
-   radial bound is `1/(2 cos θ)` or `1/(2 sin θ)`.
+2. *Polar coordinates* — **started.** The radial integral is proved
+   (`integral_radial`): `∫₀^R r dr/(2(1 - r²)) = -¼ log (1 - R²)` for `0 ≤ R < 1`,
+   which is where the logarithm first appears. What is left in this step is applying
+   `integral_comp_polarCoord_symm` to the plane integral and describing the base in
+   polar form: it is not a polar rectangle, so the angle splits at `π/4` and `3π/4`,
+   with radial bound `1/(2 cos θ)` on the outer two ranges and `1/(2 sin θ)` in the
+   middle. The substitutions `θ ↦ π - θ` and `θ ↦ π/2 - θ` fold all three onto
+   `∫₀^{π/4} log (1 - sec²θ/4) dθ`, so the volume of the half box is minus that
+   integral.
 3. *Trigonometry.* `1 + 2 cos 2θ = sin 3θ / sin θ` turns each sector into log-sine
    integrals, which the values below evaluate.
 

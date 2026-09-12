@@ -77,6 +77,15 @@ of the box per coset of `Γ(2 + i)`, finitely many. The box lies above height
 `½`, so its volume is finite; `hvol ≠ 0` makes the domain's volume positive
 (`exists_fundamentalDomain_gammaTwoI`).
 
+**The Picard fundamental domain.** `isFundamentalDomain_halfBox` — the closed half
+box `|x| ≤ ½`, `0 ≤ y ≤ ½`, `|q| ≥ 1` is a fundamental domain for the Picard group
+modulo the elements acting trivially. Covering is the reduction theory above, folded
+by `z ↦ -z`; uniqueness on the open box is the three-dimensional analogue of
+`Mathlib/NumberTheory/Modular.lean`; and the boundary, four coordinate planes and the
+unit sphere, is null. This is what would pin the covolume to a number — the volume of
+the box is `G/3`, `G` Catalan's constant, by Humbert's formula, but evaluating that
+integral in Lean is a separate and much larger problem.
+
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
 `thurston_question_23_strong`.

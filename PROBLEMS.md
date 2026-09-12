@@ -190,14 +190,31 @@ statement that the closed half box is a fundamental domain modulo `±1`. The
 three-dimensional analogue of `Mathlib/NumberTheory/Modular.lean`, about 250
 lines; see the section docstring for the argument.
 
-### H2 · Covering for the *half* box — **open**
-`exists_smul_mem_picardBox` lands in the full box; fold by `z ↦ -z`, which is
-`diag(i, -i) ∈ picard`, to land in `y ≥ 0`. Small.
+### H2 · Covering for the *half* box — **proved**
+`exists_smul_mem_halfBox`: `exists_smul_mem_picardBox` lands in the full box;
+`R = diag(i, -i) ∈ picard` acts as `z ↦ -z` and folds `y < 0` back. 30 lines.
 
-### H3 · The `PSL` action and the fundamental domain — **open**
-`IsFundamentalDomain` needs a group acting with a.e. disjoint translates, and
-`-I` acts trivially, so the acting group must be `picard` modulo `±1`. Needs the
-quotient action on `H3`, then H1 + H2 give the fundamental domain. Medium.
+### H3 · The effective action and the fundamental domain — **proved**
+`isFundamentalDomain_halfBox : IsFundamentalDomain PicardEff halfBox hvol`.
+Three pieces:
+
+- *The acting group.* `IsFundamentalDomain` needs a.e. disjoint translates and
+  `-1` acts trivially, so the group is `PicardEff = picard ⧸ picardKer`, the
+  quotient by the kernel of the action. Taking the kernel rather than `{±1}`
+  costs nothing (normality is free, and `⟦g⟧ = 1` is exactly "g acts trivially"),
+  and avoids having to prove that the kernel *is* `{±1}`.
+- *Null boundary* (`hvol_halfBox_sdiff_halfBoxOpen`). The boundary lies in four
+  coordinate planes and the unit sphere. Planes: `Measure.pi_hyperplane`. Sphere:
+  transport to `EuclideanSpace ℝ (Fin 3)` along `PiLp.volume_preserving_toLp` and
+  use `Measure.addHaar_sphere`. Then `hvol_preimage_eq_zero` carries a Lebesgue
+  null set of `ℝ³` to an `hvol` null set of `H3`, through `hvol_apply`.
+- *Assembly* via `IsFundamentalDomain.mk''`: covering is H2; for `⟦g⟧ ≠ 1` the
+  intersection `⟦g⟧ • halfBox ∩ halfBox` lies in the boundary union its translate,
+  because a point with both it and its `g⁻¹`-image in the *open* box makes `g` act
+  trivially by H1, i.e. `⟦g⟧ = 1`.
+
+H1's conclusion was strengthened for this from `g • p = p` to `∀ q, g • q = q`:
+the proof already produced `g = ±1`, only the statement was throwing it away.
 
 ### H4 · `[SL(2, ℤ[i]) : Γ(2+i)] = 120` — **open**
 `|SL(2, 𝔽₅)| = 120`, so this is the surjectivity of reduction mod `(2+i)`.

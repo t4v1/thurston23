@@ -2001,12 +2001,13 @@ theorem exists_fundamentalDomain_gammaTwoI :
 
 end Covolume
 
-/-! ## The Picard box is a fundamental domain: uniqueness
+/-! ## The Picard box is a fundamental domain
 
-`exists_smul_mem_picardBox` says every orbit meets the box; this section proves the
-other half, that it meets the open half box at most once. Together they say the
-closed half box `|x| ≤ ½`, `0 ≤ y ≤ ½`, `|q| ≥ 1` is a fundamental domain for the
-Picard group modulo `±1`, which is what pins the covolume down to a number.
+The closed half box `|x| ≤ ½`, `0 ≤ y ≤ ½`, `|q| ≥ 1` is a fundamental domain for
+the Picard group modulo the elements acting trivially (`isFundamentalDomain_halfBox`),
+which is what pins the covolume down to a number. Three ingredients: uniqueness on
+the open half box, covering (`exists_smul_mem_picardBox` folded by `z ↦ -z`), and the
+fact that the boundary — four coordinate planes and the unit sphere — is null.
 
 The argument is the three-dimensional analogue of `Mathlib/NumberTheory/Modular.lean`.
 If `g` does not lower the height then `|c z + d|² + |c|² t² ≤ 1`. In the box
@@ -2017,7 +2018,7 @@ is `z ↦ ± z + β` with `β` a Gaussian integer. The width of the box forces `
 and `z ↦ -z` is excluded by `0 < y`. The case where the height drops is the same
 argument applied to `g⁻¹`. -/
 
-section PicardUniqueness
+section PicardFundamentalDomain
 
 open Set MatrixGroups Quaternion Pointwise
 
@@ -2183,12 +2184,28 @@ theorem D_smul_coord (a : ℂ) (ha : a ≠ 0) (p : H3) :
     try ring
     try tauto
 
+/-- An element whose matrix is `± 1` acts trivially: `-1` cancels against its
+inverse in the Möbius formula. -/
+theorem smul_eq_self_of_coe_eq_pm_one {g : SL(2, ℂ)}
+    (h : (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 ∨ (g : Matrix (Fin 2) (Fin 2) ℂ) = -1) (q : H3) :
+    g • q = q := by
+  rcases h with h | h
+  · rw [show g = 1 from Subtype.ext h, one_smul]
+  · apply toQ_injective
+    rw [toQ_smul]
+    have e00 : g 0 0 = -1 := by rw [h]; simp [Matrix.one_apply]
+    have e01 : g 0 1 = 0 := by rw [h]; simp [Matrix.one_apply]
+    have e10 : g 1 0 = 0 := by rw [h]; simp [Matrix.one_apply]
+    have e11 : g 1 1 = -1 := by rw [h]; simp [Matrix.one_apply]
+    rw [mobiusQ, e00, e01, e10, e11, coe_neg_one]
+    simp
+
 /-- **Uniqueness, the triangular case.** If the height does not drop, an element of
 the Picard group carrying a point of the open box into the open box fixes it. -/
 theorem smul_eq_self_of_le_one {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
     (hp : p ∈ halfBoxOpen) (hgp : g • p ∈ halfBoxOpen)
     (hD : normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) ≤ 1) :
-    g • p = p := by
+    ∀ q : H3, g • q = q := by
   have hc : g 1 0 = 0 := bottomLeft_eq_zero_of_le_one hg hp hD
   obtain ⟨A, hA⟩ := entry_mem_of_mem_picard hg 0 0
   obtain ⟨B, hB⟩ := entry_mem_of_mem_picard hg 0 1
@@ -2282,9 +2299,6 @@ theorem smul_eq_self_of_le_one {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
       = ((g 0 0).re ^ 2 - (g 0 0).im ^ 2) * p.1 1 + (((B * A).im : ℤ) : ℝ) := by
     rw [hsmul, T_smul_val, hbeta, GaussianInt.im_toComplex]
     simp [hD1, hprod0]
-  have ht' : (g • p).1 2 = p.1 2 := by
-    rw [hsmul, T_smul_val]
-    simp [hD2, hsq1]
   obtain ⟨hx, hy0, hy1, -⟩ := hp
   obtain ⟨hxg, hyg0, hyg1, -⟩ := hgp
   rcases hs with hs | hs
@@ -2310,13 +2324,45 @@ theorem smul_eq_self_of_le_one {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
       have h1 : (B * A).im < 1 := by exact_mod_cast hpair.2
       have h2 : -1 < (B * A).im := by exact_mod_cast hpair.1
       omega
-    have hxeq : (g • p).1 0 = p.1 0 := by rw [hx', hm0]; simp
-    have hyeq : (g • p).1 1 = p.1 1 := by rw [hy', hk0]; simp
-    refine Subtype.ext (funext fun i => ?_)
-    fin_cases i
-    · exact hxeq
-    · exact hyeq
-    · exact ht'
+    -- the diagonal is real of absolute value one and the off-diagonal vanishes
+    have him2 : (g 0 0).im ^ 2 = 0 := by linear_combination (hsq1 - hs) / 2
+    have him0 : (g 0 0).im = 0 := pow_eq_zero_iff (n := 2) (by norm_num) |>.1 him2
+    have hre2 : (g 0 0).re ^ 2 = 1 := by linear_combination (hsq1 + hs) / 2
+    have hre1 : (g 0 0).re = 1 ∨ (g 0 0).re = -1 := by
+      have h2 : ((g 0 0).re - 1) * ((g 0 0).re + 1) = 0 := by linear_combination hre2
+      rcases mul_eq_zero.1 h2 with h | h
+      · exact Or.inl (by linarith)
+      · exact Or.inr (by linarith)
+    have hA0 : A ≠ 0 := by
+      intro h
+      rw [h] at hA
+      simp at hA
+      exact ha0 hA.symm
+    have hB0 : B = 0 := by
+      have hBA : B * A = 0 := by
+        apply Zsqrtd.ext
+        · simpa using hm0
+        · simpa using hk0
+      rcases mul_eq_zero.1 hBA with h | h
+      · exact h
+      · exact absurd h hA0
+    have hb0 : g 0 1 = 0 := by rw [← hB, hB0]; simp
+    have hdinv : g 1 1 = (g 0 0)⁻¹ := eq_inv_of_mul_eq_one_right hdet
+    have h00 : g 0 0 = 1 ∨ g 0 0 = -1 := by
+      rcases hre1 with h | h
+      · exact Or.inl (Complex.ext (by simpa using h) (by simpa using him0))
+      · exact Or.inr (Complex.ext (by simpa using h) (by simpa using him0))
+    have hmat : (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 ∨ (g : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
+      rcases h00 with h | h
+      · refine Or.inl ?_
+        ext i j
+        fin_cases i <;> fin_cases j <;>
+          simp [Matrix.one_apply, h, hb0, hc, hdinv]
+      · refine Or.inr ?_
+        ext i j
+        fin_cases i <;> fin_cases j <;>
+          simp [Matrix.one_apply, h, hb0, hc, hdinv]
+    exact smul_eq_self_of_coe_eq_pm_one hmat
   · -- `z ↦ -z` would send `0 < y < ½` below the real axis
     exfalso
     rw [hs] at hy'
@@ -2331,8 +2377,8 @@ theorem smul_eq_self_of_le_one {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
 point of the open half box to a point of the open half box fixes it. Together with
 the reduction theory of `exists_smul_mem_picardBox`, this says that the closed half
 box is a fundamental domain for the Picard group modulo `±1`. -/
-theorem eq_of_smul_mem_halfBoxOpen {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
-    (hp : p ∈ halfBoxOpen) (hgp : g • p ∈ halfBoxOpen) : g • p = p := by
+theorem smul_eq_self_of_mem_halfBoxOpen {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
+    (hp : p ∈ halfBoxOpen) (hgp : g • p ∈ halfBoxOpen) : ∀ q : H3, g • q = q := by
   rcases le_or_gt (normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ))) 1 with hD | hD
   · exact smul_eq_self_of_le_one hg hp hgp hD
   -- the height strictly drops, so run the same argument backwards, at `g • p`
@@ -2358,12 +2404,244 @@ theorem eq_of_smul_mem_halfBoxOpen {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
     exact mul_left_cancel₀ (ne_of_gt p.2) h4
   have hDinv : normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ)) ≤ 1 := by
     nlinarith [hmul, hD, hpos, hpos']
-  have key : g⁻¹ • (g • p) = g • p :=
+  have key : ∀ q : H3, g⁻¹ • q = q :=
     smul_eq_self_of_le_one hginv hgp (by rw [inv_smul_smul]; exact hp) hDinv
-  rw [inv_smul_smul] at key
-  exact key.symm
+  intro q
+  have h := key (g • q)
+  rw [inv_smul_smul] at h
+  exact h.symm
 
-end PicardUniqueness
+
+/-- The rotation `z ↦ -z`, that is `diag(i, -i)`, an element of the Picard group. -/
+noncomputable def R : SL(2, ℂ) := D Complex.I Complex.I_ne_zero
+
+theorem R_mem_picard : R ∈ picard := by
+  refine mem_picard_iff.2 (Fin.forall_fin_two.2 ⟨Fin.forall_fin_two.2 ⟨⟨⟨0, 1⟩, ?_⟩, ⟨0, ?_⟩⟩,
+    Fin.forall_fin_two.2 ⟨⟨0, ?_⟩, ⟨⟨0, -1⟩, ?_⟩⟩⟩)
+  · apply Complex.ext <;> simp [R, D]
+  · simp [R, D]
+  · simp [R, D]
+  · apply Complex.ext <;> simp [R, D, Complex.inv_I]
+
+theorem R_smul_coord (p : H3) :
+    (R • p).1 0 = -p.1 0 ∧ (R • p).1 1 = -p.1 1 ∧ (R • p).1 2 = p.1 2 := by
+  obtain ⟨h0, h1, h2⟩ := D_smul_coord Complex.I Complex.I_ne_zero p
+  refine ⟨?_, ?_, ?_⟩
+  · rw [show R = D Complex.I Complex.I_ne_zero from rfl, h0]
+    simp
+  · rw [show R = D Complex.I Complex.I_ne_zero from rfl, h1]
+    simp
+  · rw [show R = D Complex.I Complex.I_ne_zero from rfl, h2]
+    simp
+
+/-- The closed half box: `|x| ≤ ½`, `0 ≤ y ≤ ½`, `|q| ≥ 1`. -/
+def halfBox : Set H3 := {p | |p.1 0| ≤ 1 / 2 ∧ 0 ≤ p.1 1 ∧ p.1 1 ≤ 1 / 2 ∧ 1 ≤ N p.1}
+
+/-- **H2.** The Picard group carries every point into the closed half box: reduce
+into the full box, then fold by `z ↦ -z` if the imaginary part is negative. -/
+theorem exists_smul_mem_halfBox (p : H3) : ∃ g ∈ picard, g • p ∈ halfBox := by
+  obtain ⟨g, hg, hx, hy, hN⟩ := exists_smul_mem_picardBox p
+  rcases le_or_gt 0 ((g • p).1 1) with hy0 | hy0
+  · exact ⟨g, hg, hx, hy0, (abs_le.1 hy).2, hN⟩
+  · refine ⟨R * g, picard.mul_mem R_mem_picard hg, ?_⟩
+    obtain ⟨h0, h1, h2⟩ := R_smul_coord (g • p)
+    rw [mul_smul]
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · rw [h0, abs_neg]
+      exact hx
+    · rw [h1]
+      linarith
+    · rw [h1]
+      have := (abs_le.1 hy).1
+      linarith
+    · have hNval : ∀ q : H3, N q.1 = q.1 0 * q.1 0 + q.1 1 * q.1 1 + q.1 2 * q.1 2 := fun _ => rfl
+      rw [hNval] at hN
+      rw [hNval, h0, h1, h2]
+      nlinarith [hN]
+
+
+/-! ### H3, step 1: the boundary of the half box is null -/
+
+/-- A subset of `H3` lying over a Lebesgue-null set of `ℝ³` has hyperbolic volume zero. -/
+theorem hvol_preimage_eq_zero {A : Set (Fin 3 → ℝ)} (hA : MeasurableSet A)
+    (h : volume A = 0) : hvol (Subtype.val ⁻¹' A) = 0 := by
+  have hs : MeasurableSet (Subtype.val ⁻¹' A : Set H3) := measurable_subtype_coe hA
+  rw [hvol_apply hs]
+  have hsub : Subtype.val '' (Subtype.val ⁻¹' A : Set H3) ⊆ A := Set.image_preimage_subset _ _
+  exact setLIntegral_measure_zero _ _ (measure_mono_null hsub h)
+
+/-- A coordinate hyperplane of `ℝ³` is null. -/
+theorem volume_coord_eq (i : Fin 3) (c : ℝ) : volume {x : Fin 3 → ℝ | x i = c} = 0 := by
+  rw [volume_pi]
+  exact Measure.pi_hyperplane (fun _ => (volume : Measure ℝ)) i c
+
+/-- The unit sphere of `ℝ³` is null: transported to `EuclideanSpace`, where spheres
+are null for the Haar measure. -/
+theorem volume_normOne : volume {x : Fin 3 → ℝ | N x = 1} = 0 := by
+  have hset : {x : Fin 3 → ℝ | N x = 1}
+      = (WithLp.toLp 2 : (Fin 3 → ℝ) → EuclideanSpace ℝ (Fin 3)) ⁻¹' Metric.sphere 0 1 := by
+    ext x
+    have hNdef : N x = x 0 * x 0 + x 1 * x 1 + x 2 * x 2 := rfl
+    have hN : 0 ≤ N x := by
+      rw [hNdef]
+      nlinarith [mul_self_nonneg (x 0), mul_self_nonneg (x 1), mul_self_nonneg (x 2)]
+    have hnorm : ‖(WithLp.toLp 2 x : EuclideanSpace ℝ (Fin 3))‖ = Real.sqrt (N x) := by
+      rw [EuclideanSpace.norm_eq]
+      congr 1
+      rw [hNdef, Fin.sum_univ_three]
+      simp [Real.norm_eq_abs, sq_abs, sq]
+    simp only [Set.mem_setOf_eq, Set.mem_preimage, Metric.mem_sphere, dist_zero_right, hnorm]
+    constructor
+    · intro h
+      rw [h, Real.sqrt_one]
+    · intro h
+      have hsq := Real.sq_sqrt hN
+      rw [h] at hsq
+      simpa using hsq.symm
+  rw [hset, (PiLp.volume_preserving_toLp (Fin 3)).measure_preimage
+    (Metric.isClosed_sphere.measurableSet).nullMeasurableSet]
+  exact Measure.addHaar_sphere _ _ _
+
+theorem measurableSet_halfBox : MeasurableSet halfBox := by
+  have h0 : Measurable fun p : H3 => p.1 0 := (measurable_pi_apply 0).comp measurable_subtype_coe
+  have h1 : Measurable fun p : H3 => p.1 1 := (measurable_pi_apply 1).comp measurable_subtype_coe
+  have hN : Measurable fun p : H3 => N p.1 := by
+    have : (fun p : H3 => N p.1) = fun p : H3 => p.1 0 * p.1 0 + p.1 1 * p.1 1 + p.1 2 * p.1 2 :=
+      rfl
+    rw [this]
+    exact (((h0.mul h0).add (h1.mul h1)).add
+      (((measurable_pi_apply 2).comp measurable_subtype_coe).mul
+        ((measurable_pi_apply 2).comp measurable_subtype_coe)))
+  exact ((h0.abs measurableSet_Iic).inter ((h1 measurableSet_Ici).inter
+    ((h1 measurableSet_Iic).inter (hN measurableSet_Ici))))
+
+/-- **The boundary of the half box is null.** It lies in four coordinate hyperplanes
+and the unit sphere. -/
+theorem hvol_halfBox_sdiff_halfBoxOpen : hvol (halfBox \ halfBoxOpen) = 0 := by
+  have hsub : halfBox \ halfBoxOpen ⊆
+      (Subtype.val ⁻¹' {x : Fin 3 → ℝ | x 0 = 1 / 2}) ∪
+      (Subtype.val ⁻¹' {x : Fin 3 → ℝ | x 0 = -(1 / 2)}) ∪
+      (Subtype.val ⁻¹' {x : Fin 3 → ℝ | x 1 = 0}) ∪
+      (Subtype.val ⁻¹' {x : Fin 3 → ℝ | x 1 = 1 / 2}) ∪
+      (Subtype.val ⁻¹' {x : Fin 3 → ℝ | N x = 1}) := by
+    rintro p ⟨⟨hx, hy0, hy1, hN⟩, hopen⟩
+    simp only [halfBoxOpen, Set.mem_setOf_eq, not_and, not_lt] at hopen
+    by_cases hx' : |p.1 0| < 1 / 2
+    · by_cases hy0' : 0 < p.1 1
+      · by_cases hy1' : p.1 1 < 1 / 2
+        · have : N p.1 ≤ 1 := hopen hx' hy0' hy1'
+          exact Or.inr (le_antisymm this hN)
+        · exact Or.inl (Or.inr (le_antisymm hy1 (not_lt.1 hy1')))
+      · exact Or.inl (Or.inl (Or.inr (le_antisymm (not_lt.1 hy0') hy0)))
+    · rcases abs_le.1 hx with ⟨hle, hge⟩
+      rcases lt_or_ge (p.1 0) 0 with hneg | hpos
+      · refine Or.inl (Or.inl (Or.inl (Or.inr ?_)))
+        have : |p.1 0| = -p.1 0 := abs_of_neg hneg
+        have h2 : (1 : ℝ) / 2 ≤ |p.1 0| := not_lt.1 hx'
+        show p.1 0 = -(1 / 2)
+        rw [this] at h2
+        linarith
+      · refine Or.inl (Or.inl (Or.inl (Or.inl ?_)))
+        have : |p.1 0| = p.1 0 := abs_of_nonneg hpos
+        have h2 : (1 : ℝ) / 2 ≤ |p.1 0| := not_lt.1 hx'
+        show p.1 0 = 1 / 2
+        rw [this] at h2
+        linarith
+  refine measure_mono_null hsub ?_
+  have hplane : ∀ (i : Fin 3) (c : ℝ),
+      hvol (Subtype.val ⁻¹' {x : Fin 3 → ℝ | x i = c}) = 0 := by
+    intro i c
+    refine hvol_preimage_eq_zero ?_ (volume_coord_eq i c)
+    have hset : {x : Fin 3 → ℝ | x i = c} = (fun f : Fin 3 → ℝ => f i) ⁻¹' {c} := rfl
+    rw [hset]
+    exact measurable_pi_apply i (measurableSet_singleton c)
+  have hsphere : hvol (Subtype.val ⁻¹' {x : Fin 3 → ℝ | N x = 1}) = 0 := by
+    refine hvol_preimage_eq_zero ?_ volume_normOne
+    have : {x : Fin 3 → ℝ | N x = 1}
+        = (fun x : Fin 3 → ℝ => x 0 * x 0 + x 1 * x 1 + x 2 * x 2) ⁻¹' {1} := rfl
+    rw [this]
+    exact ((((measurable_pi_apply 0).mul (measurable_pi_apply 0)).add
+      ((measurable_pi_apply 1).mul (measurable_pi_apply 1))).add
+      ((measurable_pi_apply 2).mul (measurable_pi_apply 2))) (measurableSet_singleton 1)
+  exact measure_union_null (measure_union_null (measure_union_null (measure_union_null
+    (hplane 0 (1 / 2)) (hplane 0 (-(1 / 2)))) (hplane 1 0)) (hplane 1 (1 / 2))) hsphere
+
+/-! ### H3, step 2: the Picard group acting effectively, and the fundamental domain -/
+
+/-- The elements of the Picard group acting trivially on `H3`. It is `{±1}`, but
+nothing below needs that: as a kernel it is normal for free. -/
+noncomputable def picardKer : Subgroup picard := MonoidHom.ker (MulAction.toPermHom picard H3)
+
+instance picardKer.instNormal : picardKer.Normal :=
+  MonoidHom.normal_ker (MulAction.toPermHom picard H3)
+
+/-- The Picard group made effective: the quotient by the kernel of its action, so
+that `±1` is divided out. This is the group the half box is a fundamental domain
+for. -/
+abbrev PicardEff : Type := picard ⧸ picardKer
+
+noncomputable instance : MulAction PicardEff H3 :=
+  MulAction.compHom H3 (QuotientGroup.kerLift (MulAction.toPermHom picard H3))
+
+theorem PicardEff.mk_smul (g : picard) (p : H3) :
+    (QuotientGroup.mk g : PicardEff) • p = (g : SL(2, ℂ)) • p := rfl
+
+theorem PicardEff.mk_smul_set (g : picard) (S : Set H3) :
+    (QuotientGroup.mk g : PicardEff) • S = (g : SL(2, ℂ)) • S := rfl
+
+theorem PicardEff.measurePreserving (q : PicardEff) :
+    MeasurePreserving (fun p : H3 => q • p) hvol hvol := by
+  induction q using QuotientGroup.induction_on with
+  | H g => exact measurePreserving_smul (g : SL(2, ℂ))
+
+/-- **H3.** The closed half box is a fundamental domain for the Picard group acting
+effectively. Covering is `exists_smul_mem_halfBox`; disjointness is uniqueness on
+the open box, since the boundary is null. -/
+theorem isFundamentalDomain_halfBox : IsFundamentalDomain PicardEff halfBox hvol := by
+  refine IsFundamentalDomain.mk'' measurableSet_halfBox.nullMeasurableSet ?_ ?_ ?_
+  · filter_upwards with p
+    obtain ⟨g, hg, hgp⟩ := exists_smul_mem_halfBox p
+    exact ⟨QuotientGroup.mk ⟨g, hg⟩, hgp⟩
+  · intro q hq
+    induction q using QuotientGroup.induction_on with
+    | H g =>
+      have hsub : ((QuotientGroup.mk g : PicardEff) • halfBox) ∩ halfBox ⊆
+          ((g : SL(2, ℂ)) • (halfBox \ halfBoxOpen)) ∪ (halfBox \ halfBoxOpen) := by
+        rintro p ⟨hp1, hp2⟩
+        by_contra hcon
+        rw [Set.mem_union, not_or] at hcon
+        obtain ⟨hcon1, hcon2⟩ := hcon
+        have hopen : p ∈ halfBoxOpen := by
+          by_contra h
+          exact hcon2 ⟨hp2, h⟩
+        have hinv : (g : SL(2, ℂ))⁻¹ • p ∈ halfBox := by
+          rw [PicardEff.mk_smul_set, Set.mem_smul_set_iff_inv_smul_mem] at hp1
+          exact hp1
+        have hinvopen : (g : SL(2, ℂ))⁻¹ • p ∈ halfBoxOpen := by
+          by_contra h
+          refine hcon1 ?_
+          rw [Set.mem_smul_set_iff_inv_smul_mem]
+          exact ⟨hinv, h⟩
+        have htriv : ∀ r : H3, (g : SL(2, ℂ))⁻¹ • r = r :=
+          smul_eq_self_of_mem_halfBoxOpen (picard.inv_mem g.2) hopen hinvopen
+        have htrivg : ∀ r : H3, (g : SL(2, ℂ)) • r = r := by
+          intro r
+          have h := htriv ((g : SL(2, ℂ)) • r)
+          rw [inv_smul_smul] at h
+          exact h.symm
+        refine hq ?_
+        refine (QuotientGroup.eq_one_iff _).2 ?_
+        rw [picardKer, MonoidHom.mem_ker]
+        refine Equiv.ext fun r => ?_
+        exact htrivg r
+      refine measure_mono_null hsub ?_
+      refine measure_union_null ?_ hvol_halfBox_sdiff_halfBoxOpen
+      rw [measure_smul]
+      exact hvol_halfBox_sdiff_halfBoxOpen
+  · intro q
+    exact (PicardEff.measurePreserving q).quasiMeasurePreserving
+
+end PicardFundamentalDomain
 
 
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic

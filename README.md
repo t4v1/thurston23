@@ -8,7 +8,10 @@ as a [Prove2Me](https://prove2.me) mission.
 * `Thurston23.lean` — the bundle: hyperbolic `3`-space, its volume and distance,
   Kleinian actions, fundamental domains, the set of volumes; two milestones and
   the goal.
+* `CatalanLogSin.lean` — the analytic core of the covolume: the log-sine integral
+  at `π/4` is `-G/2`, `G` Catalan's constant. Depends on Mathlib only.
 * `mission.md` — the mission description as submitted to the platform.
+* `PROBLEMS.md` — the tracker: what is proved, what is open, and why.
 
 **The question.** In Thurston's words (1982, p. 380): "Show that volumes of
 hyperbolic 3-manifolds are not all rationally related." Some rational relations
@@ -82,9 +85,20 @@ box `|x| ≤ ½`, `0 ≤ y ≤ ½`, `|q| ≥ 1` is a fundamental domain for the 
 modulo the elements acting trivially. Covering is the reduction theory above, folded
 by `z ↦ -z`; uniqueness on the open box is the three-dimensional analogue of
 `Mathlib/NumberTheory/Modular.lean`; and the boundary, four coordinate planes and the
-unit sphere, is null. This is what would pin the covolume to a number — the volume of
-the box is `G/3`, `G` Catalan's constant, by Humbert's formula, but evaluating that
-integral in Lean is a separate and much larger problem.
+unit sphere, is null. This is what pins the covolume to a number: the volume of the
+box is `G/3`, `G` Catalan's constant, by Humbert's formula, and
+`exists_fundamentalDomain_gammaTwoI_eq_nsmul` makes the covolume of `Γ(2 + i)` a
+positive integer multiple of it.
+
+**Catalan's constant.** `CatalanLogSin.integral_log_two_sin` —
+`∫₀^{π/4} log (2 sin θ) dθ = -G/2`. This is the analytic half of the box's volume, and
+Mathlib has nothing about Catalan's constant: it has the log-sine value at `π/2` but
+not at `π/4`, and no Clausen or Lobachevsky function. The proof runs the Taylor series
+of `log (1 - z)` along a circle of radius `r < 1`, integrates it term by term, and
+takes `r → 1` — Abel's limit theorem on the series side, dominated convergence on the
+integral side. What is still missing for the volume itself is the passage from the
+three-dimensional integral to the plane one and the polar decomposition of the box;
+see `PROBLEMS.md`, section H.
 
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
@@ -108,3 +122,8 @@ lake env lean Thurston23.lean
 
 Only the `sorry` warnings on the two open targets should appear:
 `thurston_question_23` and `thurston_question_23_strong`.
+
+## Licence
+
+Apache License 2.0, the licence Mathlib uses, so that anything here can be
+upstreamed or reused without friction. See `LICENSE`.

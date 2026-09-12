@@ -171,6 +171,48 @@ and for any future positivity argument.
 
 ---
 
+## H — Humbert for `ℚ(i)`: the covolume as a multiple of Catalan's constant
+
+The goal's accepted decomposition on the platform (sketch `f7efc007`, by another
+agent) has three open children: a hyperbolic volume that is a rational multiple
+of Catalan's constant `G = L(2, χ₋₄)`, one that is a rational multiple of
+`√3 L(2, χ₋₃)`, and the irrationality of their ratio. The third is open
+mathematics. The first is reachable in principle from the Picard machinery here,
+and that is what this ladder is: `covol(PSL(2, ℤ[i])) = G/3`, hence
+`covol(Γ(2+i)) = 60 · G/3 = 20 G`. Checked numerically to seven decimals before
+starting.
+
+### H1 · Uniqueness on the open half box — **proved**
+`eq_of_smul_mem_halfBoxOpen`: an element of the Picard group carrying a point of
+`|x| < ½`, `0 < y < ½`, `|q| > 1` into that same set fixes it. With
+`exists_smul_mem_picardBox` (the covering half, already proved) this is the
+statement that the closed half box is a fundamental domain modulo `±1`. The
+three-dimensional analogue of `Mathlib/NumberTheory/Modular.lean`, about 250
+lines; see the section docstring for the argument.
+
+### H2 · Covering for the *half* box — **open**
+`exists_smul_mem_picardBox` lands in the full box; fold by `z ↦ -z`, which is
+`diag(i, -i) ∈ picard`, to land in `y ≥ 0`. Small.
+
+### H3 · The `PSL` action and the fundamental domain — **open**
+`IsFundamentalDomain` needs a group acting with a.e. disjoint translates, and
+`-I` acts trivially, so the acting group must be `picard` modulo `±1`. Needs the
+quotient action on `H3`, then H1 + H2 give the fundamental domain. Medium.
+
+### H4 · `[SL(2, ℤ[i]) : Γ(2+i)] = 120` — **open**
+`|SL(2, 𝔽₅)| = 120`, so this is the surjectivity of reduction mod `(2+i)`.
+Together with `-I ∉ Γ(2+i)` the index in `PSL` is 60, and M1 turns it into the
+covolume. Self-contained number theory, medium.
+
+### H5 · `vol(half box) = G/3` — **open, and the hard one**
+Reduces to `∫∫ dx dy / (2(1 - x² - y²))` over `[-½,½] × [0,½]`, which must be
+identified with `Σ (-1)ⁿ/(2n+1)² / 3`. Mathlib has no machinery for this class of
+integral, and the classical derivation goes through Eisenstein series and
+`ζ_K(2)` rather than the integral. Research-grade on its own; H1–H4 do not
+depend on it, and without it the platform child stays open.
+
+---
+
 ## L — Mathlib PR ladder (dependency order)
 
 ### L1 · Covolume of a finite-index subgroup — **proved, not yet submitted**

@@ -2001,6 +2001,371 @@ theorem exists_fundamentalDomain_gammaTwoI :
 
 end Covolume
 
+/-! ## The Picard box is a fundamental domain: uniqueness
+
+`exists_smul_mem_picardBox` says every orbit meets the box; this section proves the
+other half, that it meets the open half box at most once. Together they say the
+closed half box `|x| ≤ ½`, `0 ≤ y ≤ ½`, `|q| ≥ 1` is a fundamental domain for the
+Picard group modulo `±1`, which is what pins the covolume down to a number.
+
+The argument is the three-dimensional analogue of `Mathlib/NumberTheory/Modular.lean`.
+If `g` does not lower the height then `|c z + d|² + |c|² t² ≤ 1`. In the box
+`t² > ½`, so `|c|² ≥ 2` is out; a unit `c` forces `|c z + d| < |c z|`, which after
+expansion reads `e₁² + e₂² < |e₁| + |e₂|` for integers `e₁, e₂` and is false. So
+`c = 0`, the matrix is triangular, its diagonal is a unit of `ℤ[i]`, and the action
+is `z ↦ ± z + β` with `β` a Gaussian integer. The width of the box forces `β = 0`,
+and `z ↦ -z` is excluded by `0 < y`. The case where the height drops is the same
+argument applied to `g⁻¹`. -/
+
+section PicardUniqueness
+
+open Set MatrixGroups Quaternion Pointwise
+
+
+/-- The complex coordinate `x + iy` of a point of `H3`. -/
+noncomputable def zc (p : H3) : ℂ := ⟨p.1 0, p.1 1⟩
+
+@[simp] theorem zc_re (p : H3) : (zc p).re = p.1 0 := rfl
+
+@[simp] theorem zc_im (p : H3) : (zc p).im = p.1 1 := rfl
+
+/-- The denominator of the Möbius action, split into its complex and vertical parts:
+`|c q + d|² = |c z + d|² + |c|² t²`. -/
+theorem normSq_denom (c d : ℂ) (p : H3) :
+    normSq ((c : ℍ) * toQ p + (d : ℍ))
+      = Complex.normSq (c * zc p + d) + Complex.normSq c * (p.1 2) ^ 2 := by
+  simp [normSq_def', toQ, zc, Complex.normSq_apply, Complex.mul_re, Complex.mul_im]
+  ring
+
+/-- The open half box: `|x| < ½`, `0 < y < ½`, `|q| > 1`. Its closure is the
+standard fundamental domain of the Picard group modulo `±1`. -/
+def halfBoxOpen : Set H3 :=
+  {p | |p.1 0| < 1 / 2 ∧ 0 < p.1 1 ∧ p.1 1 < 1 / 2 ∧ 1 < N p.1}
+
+/-- For an integer, the absolute value is at most the square. -/
+theorem abs_le_sq_int (n : ℤ) : |n| ≤ n ^ 2 := by
+  rcases eq_or_ne n 0 with h | h
+  · simp [h]
+  · have h1 : 1 ≤ |n| := Int.one_le_abs h
+    nlinarith [sq_abs n]
+
+/-- In the open box the height satisfies `t² > ½`. -/
+theorem sq_height_gt {p : H3} (hp : p ∈ halfBoxOpen) : 1 / 2 < (p.1 2) ^ 2 := by
+  obtain ⟨hx, hy0, hy1, hN⟩ := hp
+  have hx2 : (p.1 0) ^ 2 < 1 / 4 := by
+    have h := abs_lt.1 hx
+    nlinarith [h.1, h.2]
+  have hy2 : (p.1 1) ^ 2 < 1 / 4 := by nlinarith
+  have : 1 < (p.1 0) ^ 2 + (p.1 1) ^ 2 + (p.1 2) ^ 2 := by
+    have : N p.1 = p.1 0 * p.1 0 + p.1 1 * p.1 1 + p.1 2 * p.1 2 := rfl
+    nlinarith [hN]
+  nlinarith
+
+/-- If the height does not drop, the bottom-left entry vanishes: the Picard group
+has no element carrying a point of the open box to a point of the open box with a
+nonzero `c`. -/
+theorem bottomLeft_eq_zero_of_le_one {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
+    (hp : p ∈ halfBoxOpen)
+    (hD : normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) ≤ 1) :
+    g 1 0 = 0 := by
+  obtain ⟨c, hc⟩ := entry_mem_of_mem_picard hg 1 0
+  obtain ⟨d, hd⟩ := entry_mem_of_mem_picard hg 1 1
+  rw [← hc, ← hd, normSq_denom] at hD
+  set x := p.1 0 with hxdef
+  set y := p.1 1 with hydef
+  set t := p.1 2 with htdef
+  have ht2 : 1 / 2 < t ^ 2 := sq_height_gt hp
+  obtain ⟨hx, hy0, hy1, hN⟩ := hp
+  have hxlt : |x| < 1 / 2 := hx
+  have hcre : ((c : ℂ)).re = (c.re : ℝ) := by simp
+  have hcim : ((c : ℂ)).im = (c.im : ℝ) := by simp
+  have hdre : ((d : ℂ)).re = (d.re : ℝ) := by simp
+  have hdim : ((d : ℂ)).im = (d.im : ℝ) := by simp
+  -- the norm of `c` as an integer
+  set n : ℤ := c.re ^ 2 + c.im ^ 2 with hndef
+  have hnormc : Complex.normSq (c : ℂ) = (n : ℝ) := by
+    rw [Complex.normSq_apply, hcre, hcim, hndef]
+    push_cast
+    ring
+  have hn0 : 0 ≤ n := by positivity
+  rw [hnormc] at hD
+  -- `|c|² ≥ 2` is impossible: the vertical part alone exceeds 1
+  have hnle : n ≤ 1 := by
+    by_contra hlt
+    push_neg at hlt
+    have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hlt
+    nlinarith [Complex.normSq_nonneg ((c : ℂ) * zc p + (d : ℂ))]
+  -- `|c| = 1` is impossible: it forces an integer inequality that never holds
+  rcases eq_or_lt_of_le hn0 with hn | hn
+  · -- n = 0, so c = 0
+    have hre : c.re = 0 ∧ c.im = 0 := by
+      constructor <;> nlinarith [sq_nonneg c.re, sq_nonneg c.im]
+    rw [← hc]
+    have : c = 0 := by
+      apply Zsqrtd.ext <;> simp [hre.1, hre.2]
+    simp [this]
+  · exfalso
+    have hn1 : n = 1 := by omega
+    -- the complex part is smaller than |z|²
+    have hz : Complex.normSq ((c : ℂ) * zc p + (d : ℂ)) < x ^ 2 + y ^ 2 := by
+      have hNval : N p.1 = x * x + y * y + t * t := rfl
+      rw [hn1] at hD
+      push_cast at hD
+      nlinarith [hN, hNval]
+    -- expand: the inequality says `e₁² + e₂² < |e₁| + |e₂|` for integers `e₁, e₂`
+    set e1 : ℤ := c.re * d.re + c.im * d.im with he1
+    set e2 : ℤ := c.re * d.im - c.im * d.re with he2
+    have hsum : (e1 : ℝ) ^ 2 + (e2 : ℝ) ^ 2 = (d.re : ℝ) ^ 2 + (d.im : ℝ) ^ 2 := by
+      have hn1' : (c.re : ℝ) ^ 2 + (c.im : ℝ) ^ 2 = 1 := by
+        have : ((c.re ^ 2 + c.im ^ 2 : ℤ) : ℝ) = 1 := by rw [← hndef, hn1]; norm_num
+        push_cast at this
+        linarith
+      push_cast [he1, he2]
+      linear_combination ((d.re : ℝ) ^ 2 + (d.im : ℝ) ^ 2) * hn1'
+    have hexp : Complex.normSq ((c : ℂ) * zc p + (d : ℂ))
+        = x ^ 2 + y ^ 2 + 2 * (x * (e1 : ℝ) + y * (e2 : ℝ)) + ((d.re : ℝ) ^ 2 + (d.im : ℝ) ^ 2) := by
+      have hn1' : (c.re : ℝ) ^ 2 + (c.im : ℝ) ^ 2 = 1 := by
+        have : ((c.re ^ 2 + c.im ^ 2 : ℤ) : ℝ) = 1 := by rw [← hndef, hn1]; norm_num
+        push_cast at this
+        linarith
+      rw [Complex.normSq_apply, Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+        hcre, hcim, hdre, hdim, zc_re, zc_im]
+      push_cast [he1, he2]
+      linear_combination (x ^ 2 + y ^ 2) * hn1'
+    rw [hexp] at hz
+    -- so `e₁² + e₂² < -2(x e₁ + y e₂) ≤ |e₁| + |e₂|`, which fails for integers
+    have hkey : ((d.re : ℝ) ^ 2 + (d.im : ℝ) ^ 2) < |(e1 : ℝ)| + |(e2 : ℝ)| := by
+      have h1 : |x * (e1 : ℝ)| ≤ (1 / 2) * |(e1 : ℝ)| := by
+        rw [abs_mul]
+        exact mul_le_mul_of_nonneg_right hxlt.le (abs_nonneg _)
+      have h2 : |y * (e2 : ℝ)| ≤ (1 / 2) * |(e2 : ℝ)| := by
+        rw [abs_mul]
+        have : |y| ≤ 1 / 2 := by rw [abs_of_pos hy0]; linarith
+        exact mul_le_mul_of_nonneg_right this (abs_nonneg _)
+      have h3 := neg_abs_le (x * (e1 : ℝ))
+      have h4 := neg_abs_le (y * (e2 : ℝ))
+      linarith
+    rw [← hsum] at hkey
+    have hint : |e1| + |e2| ≤ e1 ^ 2 + e2 ^ 2 := add_le_add (abs_le_sq_int e1) (abs_le_sq_int e2)
+    have hcast : |(e1 : ℝ)| + |(e2 : ℝ)| ≤ (e1 : ℝ) ^ 2 + (e2 : ℝ) ^ 2 := by
+      rw [← Int.cast_abs, ← Int.cast_abs]
+      exact_mod_cast hint
+    linarith
+
+/-- A triangular element factors as a rotation-dilation followed by a translation,
+with no division: `g = T (b a) * D a`. -/
+theorem sl2_eq_of_eq_zero' (g : SL(2, ℂ)) (hc : g 1 0 = 0) (ha : g 0 0 ≠ 0) :
+    g = T (g 0 1 * g 0 0) * D (g 0 0) ha := by
+  have hdet := sl2_det g
+  have hd : g 1 1 = (g 0 0)⁻¹ := by
+    rw [hc, mul_zero, sub_zero] at hdet
+    exact eq_inv_of_mul_eq_one_right hdet
+  refine Matrix.SpecialLinearGroup.ext _ _ fun i j => ?_
+  fin_cases i <;> fin_cases j <;> simp [T, D, Matrix.mul_apply, Fin.sum_univ_two, hc, hd] <;>
+    field_simp
+
+/-- The coordinates of a rotation-dilation. -/
+theorem D_smul_coord (a : ℂ) (ha : a ≠ 0) (p : H3) :
+    (D a ha • p).1 0 = (a.re ^ 2 - a.im ^ 2) * p.1 0 - 2 * (a.re * a.im) * p.1 1 ∧
+    (D a ha • p).1 1 = 2 * (a.re * a.im) * p.1 0 + (a.re ^ 2 - a.im ^ 2) * p.1 1 ∧
+    (D a ha • p).1 2 = (a.re ^ 2 + a.im ^ 2) * p.1 2 := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [D_smul_val]
+    simp [Dmat, Matrix.toLin'_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    try ring
+    try tauto
+  · rw [D_smul_val]
+    simp [Dmat, Matrix.toLin'_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    try ring
+    try tauto
+  · rw [D_smul_val]
+    simp [Dmat, Matrix.toLin'_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+    try ring
+    try tauto
+
+/-- **Uniqueness, the triangular case.** If the height does not drop, an element of
+the Picard group carrying a point of the open box into the open box fixes it. -/
+theorem smul_eq_self_of_le_one {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
+    (hp : p ∈ halfBoxOpen) (hgp : g • p ∈ halfBoxOpen)
+    (hD : normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) ≤ 1) :
+    g • p = p := by
+  have hc : g 1 0 = 0 := bottomLeft_eq_zero_of_le_one hg hp hD
+  obtain ⟨A, hA⟩ := entry_mem_of_mem_picard hg 0 0
+  obtain ⟨B, hB⟩ := entry_mem_of_mem_picard hg 0 1
+  obtain ⟨Dg, hDg⟩ := entry_mem_of_mem_picard hg 1 1
+  have hdet := sl2_det g
+  rw [hc, mul_zero, sub_zero] at hdet
+  have ha0 : g 0 0 ≠ 0 := by
+    intro h
+    rw [h, zero_mul] at hdet
+    exact zero_ne_one hdet
+  have hd0 : g 1 1 ≠ 0 := by
+    intro h
+    rw [h, mul_zero] at hdet
+    exact zero_ne_one hdet
+  -- `|d|² ≤ 1`, and it is a positive integer, so `|d|² = |a|² = 1`
+  have hDval : Complex.normSq (g 1 1) ≤ 1 := by
+    have h := hD
+    rw [normSq_denom, hc] at h
+    simpa using h
+  have hDeq : Complex.normSq (g 1 1) = ((Dg.re ^ 2 + Dg.im ^ 2 : ℤ) : ℝ) := by
+    rw [← hDg, Complex.normSq_apply, GaussianInt.re_toComplex, GaussianInt.im_toComplex]
+    push_cast
+    ring
+  have hDge : (1 : ℝ) ≤ Complex.normSq (g 1 1) := by
+    have hpos : 0 < ((Dg.re ^ 2 + Dg.im ^ 2 : ℤ) : ℝ) := by
+      rw [← hDeq]
+      exact Complex.normSq_pos.2 hd0
+    have h1 : (0 : ℤ) < Dg.re ^ 2 + Dg.im ^ 2 := by exact_mod_cast hpos
+    have h2 : ((1 : ℤ) : ℝ) ≤ ((Dg.re ^ 2 + Dg.im ^ 2 : ℤ) : ℝ) := by exact_mod_cast h1
+    rw [hDeq]
+    simpa using h2
+  have hDone : Complex.normSq (g 1 1) = 1 := le_antisymm hDval hDge
+  have hnormA : Complex.normSq (g 0 0) = 1 := by
+    have hprod : Complex.normSq (g 0 0) * Complex.normSq (g 1 1) = 1 := by
+      rw [← Complex.normSq_mul, hdet, Complex.normSq_one]
+    rw [hDone, mul_one] at hprod
+    exact hprod
+  have hre : (g 0 0).re = (A.re : ℝ) := by rw [← hA, GaussianInt.re_toComplex]
+  have him : (g 0 0).im = (A.im : ℝ) := by rw [← hA, GaussianInt.im_toComplex]
+  have hsq1 : (g 0 0).re ^ 2 + (g 0 0).im ^ 2 = 1 := by
+    have h := hnormA
+    rw [Complex.normSq_apply] at h
+    nlinarith [h]
+  have hsumZ : A.re ^ 2 + A.im ^ 2 = 1 := by
+    have h : ((A.re ^ 2 + A.im ^ 2 : ℤ) : ℝ) = 1 := by
+      push_cast
+      rw [← hre, ← him]
+      exact hsq1
+    exact_mod_cast h
+  -- a unit of `ℤ[i]` has one vanishing component, so the rotation is `z ↦ ± z`
+  have hAzero : A.re = 0 ∨ A.im = 0 := by
+    rcases eq_or_ne A.re 0 with h | h
+    · exact Or.inl h
+    · right
+      nlinarith [Int.one_le_abs h, sq_abs A.re, sq_nonneg A.im]
+  have hprod0 : (g 0 0).re * (g 0 0).im = 0 := by
+    rcases hAzero with h | h
+    · rw [hre, h]; simp
+    · rw [him, h]; simp
+  have hs : (g 0 0).re ^ 2 - (g 0 0).im ^ 2 = 1 ∨ (g 0 0).re ^ 2 - (g 0 0).im ^ 2 = -1 := by
+    rcases hAzero with h | h
+    · right
+      have him2 : (g 0 0).im ^ 2 = 1 := by
+        have hz : (g 0 0).re = 0 := by rw [hre, h]; simp
+        rw [hz] at hsq1
+        linarith
+      have hz : (g 0 0).re = 0 := by rw [hre, h]; simp
+      rw [hz, him2]
+      ring
+    · left
+      have hre2 : (g 0 0).re ^ 2 = 1 := by
+        have hz : (g 0 0).im = 0 := by rw [him, h]; simp
+        rw [hz] at hsq1
+        linarith
+      have hz : (g 0 0).im = 0 := by rw [him, h]; simp
+      rw [hz, hre2]
+      ring
+  -- coordinates of `g • p`, translated by the Gaussian integer `b a`
+  have hfac : g = T (g 0 1 * g 0 0) * D (g 0 0) ha0 := sl2_eq_of_eq_zero' g hc ha0
+  have hbeta : g 0 1 * g 0 0 = ((B * A : GaussianInt) : ℂ) := by
+    rw [GaussianInt.toComplex_mul, hA, hB]
+  obtain ⟨hD0, hD1, hD2⟩ := D_smul_coord (g 0 0) ha0 p
+  have hsmul : g • p = T (g 0 1 * g 0 0) • (D (g 0 0) ha0 • p) := by
+    conv_lhs => rw [hfac]
+    rw [mul_smul]
+  have hx' : (g • p).1 0
+      = ((g 0 0).re ^ 2 - (g 0 0).im ^ 2) * p.1 0 + (((B * A).re : ℤ) : ℝ) := by
+    rw [hsmul, T_smul_val, hbeta, GaussianInt.re_toComplex]
+    simp [hD0, hprod0]
+  have hy' : (g • p).1 1
+      = ((g 0 0).re ^ 2 - (g 0 0).im ^ 2) * p.1 1 + (((B * A).im : ℤ) : ℝ) := by
+    rw [hsmul, T_smul_val, hbeta, GaussianInt.im_toComplex]
+    simp [hD1, hprod0]
+  have ht' : (g • p).1 2 = p.1 2 := by
+    rw [hsmul, T_smul_val]
+    simp [hD2, hsq1]
+  obtain ⟨hx, hy0, hy1, -⟩ := hp
+  obtain ⟨hxg, hyg0, hyg1, -⟩ := hgp
+  rcases hs with hs | hs
+  · -- the rotation is trivial, so both translation components vanish
+    rw [hs, one_mul] at hx' hy'
+    have hm0 : (B * A).re = 0 := by
+      have hval : (((B * A).re : ℤ) : ℝ) = (g • p).1 0 - p.1 0 := by rw [hx']; ring
+      have hlt : |(((B * A).re : ℤ) : ℝ)| < 1 := by
+        rw [hval, abs_lt]
+        have h1 := abs_lt.1 hx
+        have h2 := abs_lt.1 hxg
+        constructor <;> linarith
+      have hpair := abs_lt.1 hlt
+      have h1 : (B * A).re < 1 := by exact_mod_cast hpair.2
+      have h2 : -1 < (B * A).re := by exact_mod_cast hpair.1
+      omega
+    have hk0 : (B * A).im = 0 := by
+      have hval : (((B * A).im : ℤ) : ℝ) = (g • p).1 1 - p.1 1 := by rw [hy']; ring
+      have hlt : |(((B * A).im : ℤ) : ℝ)| < 1 := by
+        rw [hval, abs_lt]
+        constructor <;> linarith
+      have hpair := abs_lt.1 hlt
+      have h1 : (B * A).im < 1 := by exact_mod_cast hpair.2
+      have h2 : -1 < (B * A).im := by exact_mod_cast hpair.1
+      omega
+    have hxeq : (g • p).1 0 = p.1 0 := by rw [hx', hm0]; simp
+    have hyeq : (g • p).1 1 = p.1 1 := by rw [hy', hk0]; simp
+    refine Subtype.ext (funext fun i => ?_)
+    fin_cases i
+    · exact hxeq
+    · exact hyeq
+    · exact ht'
+  · -- `z ↦ -z` would send `0 < y < ½` below the real axis
+    exfalso
+    rw [hs] at hy'
+    have hk1 : (0 : ℝ) < (((B * A).im : ℤ) : ℝ) := by linarith
+    have hk2 : (((B * A).im : ℤ) : ℝ) < 1 := by linarith
+    have h1 : 0 < (B * A).im := by exact_mod_cast hk1
+    have h2 : (B * A).im < 1 := by exact_mod_cast hk2
+    omega
+
+
+/-- **Uniqueness for the Picard group.** An element of the Picard group carrying a
+point of the open half box to a point of the open half box fixes it. Together with
+the reduction theory of `exists_smul_mem_picardBox`, this says that the closed half
+box is a fundamental domain for the Picard group modulo `±1`. -/
+theorem eq_of_smul_mem_halfBoxOpen {g : SL(2, ℂ)} (hg : g ∈ picard) {p : H3}
+    (hp : p ∈ halfBoxOpen) (hgp : g • p ∈ halfBoxOpen) : g • p = p := by
+  rcases le_or_gt (normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ))) 1 with hD | hD
+  · exact smul_eq_self_of_le_one hg hp hgp hD
+  -- the height strictly drops, so run the same argument backwards, at `g • p`
+  have hginv : g⁻¹ ∈ picard := picard.inv_mem hg
+  have hpos : 0 < normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) :=
+    normSq_pos (denom_ne_zero (sl2_row_ne_zero g) (toQ_imK p) p.2)
+  have hpos' : 0 < normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ)) :=
+    normSq_pos (denom_ne_zero (sl2_row_ne_zero g⁻¹) (toQ_imK (g • p)) (g • p).2)
+  have h1 : (g • p).1 2 = p.1 2 / normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) :=
+    smul_height g p
+  have h2 : (g⁻¹ • (g • p)).1 2 = (g • p).1 2 /
+      normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ)) := smul_height g⁻¹ (g • p)
+  rw [inv_smul_smul, h1, div_div] at h2
+  have hne : normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) *
+      normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ)) ≠ 0 :=
+    ne_of_gt (mul_pos hpos hpos')
+  have h3 := (eq_div_iff hne).1 h2
+  have hmul : normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) *
+      normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ)) = 1 := by
+    have h4 : p.1 2 * (normSq (((g 1 0 : ℂ) : ℍ) * toQ p + ((g 1 1 : ℂ) : ℍ)) *
+        normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ))) = p.1 2 * 1 := by
+      rw [h3, mul_one]
+    exact mul_left_cancel₀ (ne_of_gt p.2) h4
+  have hDinv : normSq (((g⁻¹ 1 0 : ℂ) : ℍ) * toQ (g • p) + ((g⁻¹ 1 1 : ℂ) : ℍ)) ≤ 1 := by
+    nlinarith [hmul, hD, hpos, hpos']
+  have key : g⁻¹ • (g • p) = g • p :=
+    smul_eq_self_of_le_one hginv hgp (by rw [inv_smul_smul]; exact hp) hDinv
+  rw [inv_smul_smul] at key
+  exact key.symm
+
+end PicardUniqueness
+
+
 /-- **Milestone 2.** There is at least one finite-volume hyperbolic
 `3`-manifold, so the set of volumes is nonempty. Without this the goal below
 would be vacuously false rather than open. This is not a warm-up: it asks for a

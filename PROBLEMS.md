@@ -216,10 +216,24 @@ Three pieces:
 H1's conclusion was strengthened for this from `g • p = p` to `∀ q, g • q = q`:
 the proof already produced `g = ±1`, only the statement was throwing it away.
 
-### H4 · `[SL(2, ℤ[i]) : Γ(2+i)] = 120` — **open**
-`|SL(2, 𝔽₅)| = 120`, so this is the surjectivity of reduction mod `(2+i)`.
-Together with `-I ∉ Γ(2+i)` the index in `PSL` is 60, and M1 turns it into the
-covolume. Self-contained number theory, medium.
+### H4 · The covolume of `Γ(2+i)` as a multiple of the box — **proved**
+`exists_fundamentalDomain_gammaTwoI_eq_nsmul`: there are `n > 0` and a
+fundamental domain `F` for `Γ(2+i)` with `hvol F = n • hvol halfBox`, together
+with `hvol_halfBox_pos` and `hvol_halfBox_lt_top`.
+
+The exact value `n = 60` is *not needed*: the platform child asks for a
+**rational** multiple of Catalan's constant, so any finite index does. That
+realization shrank this step a lot — the original plan (surjectivity of reduction
+mod `(2+i)`, then `|SL(2, 𝔽₅)| = 120`, then halving for `±1`) is only needed to
+name the constant, i.e. to say `covol(Γ(2+i)) = 20 G` rather than `n G/3`.
+
+What is needed is the bridge: `n` is the index of `gammaTwoIEff`, the image of
+`Γ(2+i)` in `PicardEff`, nonzero by `Subgroup.index_map_dvd` from
+`relIndex_gammaTwoI_picard`; `isFundamentalDomain_iUnion_out` builds `F` from the
+box; `measure_eq_index_smul` (M1) gives the volume; and
+`isFundamentalDomain_of_eff` carries the domain back from the image to `Γ(2+i)`
+itself, which is legitimate because `Γ(2+i) → PicardEff` is injective: an element
+of `Γ(2+i)` acting trivially fixes a point, so it is the identity by freeness.
 
 ### H5 · `vol(half box) = G/3` — **open, and the hard one**
 Reduces to `∫∫ dx dy / (2(1 - x² - y²))` over `[-½,½] × [0,½]`, which must be

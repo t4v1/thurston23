@@ -2641,6 +2641,126 @@ theorem isFundamentalDomain_halfBox : IsFundamentalDomain PicardEff halfBox hvol
   · intro q
     exact (PicardEff.measurePreserving q).quasiMeasurePreserving
 
+/-! ### The covolume of `Γ(2+i)` as a multiple of the box -/
+
+
+instance : Countable picard :=
+  countable_of_properlyDiscontinuous basepoint picard_properlyDiscontinuous
+
+instance : SMulInvariantMeasure PicardEff H3 hvol :=
+  ⟨fun q _ hs => (PicardEff.measurePreserving q).measure_preimage hs.nullMeasurableSet⟩
+
+instance : MeasurableConstSMul PicardEff H3 :=
+  ⟨fun q => (PicardEff.measurePreserving q).measurable⟩
+
+/-- The image of `Γ(2+i)` in the effectively acting Picard group. -/
+noncomputable def gammaTwoIEff : Subgroup PicardEff :=
+  (gammaTwoI.subgroupOf picard).map (QuotientGroup.mk' picardKer)
+
+/-- An element of `Γ(2+i)` acting trivially is the identity: the action is free. -/
+theorem eq_one_of_mem_gammaTwoI_of_smul_eq {g : SL(2, ℂ)} (hg : g ∈ gammaTwoI)
+    (h : ∀ p : H3, g • p = p) : g = 1 := by
+  by_contra hne
+  exact gammaTwoI_free hg hne basepoint (h basepoint)
+
+/-- `Γ(2+i)` injects into the effective quotient. -/
+theorem gammaTwoI_toEff_injective :
+    Function.Injective (fun γ : gammaTwoI =>
+      (QuotientGroup.mk ⟨(γ : SL(2, ℂ)), gammaTwoI_le_picard γ.2⟩ : PicardEff)) := by
+  intro γ₁ γ₂ h
+  have hmem : (⟨(γ₁ : SL(2, ℂ)), gammaTwoI_le_picard γ₁.2⟩ : picard)⁻¹ *
+      ⟨(γ₂ : SL(2, ℂ)), gammaTwoI_le_picard γ₂.2⟩ ∈ picardKer := QuotientGroup.eq.mp h
+  rw [picardKer, MonoidHom.mem_ker] at hmem
+  have htriv : ∀ p : H3, ((γ₁ : SL(2, ℂ))⁻¹ * (γ₂ : SL(2, ℂ))) • p = p := by
+    intro p
+    have := congrArg (fun e : Equiv.Perm H3 => e p) hmem
+    simpa using this
+  have hmul : (γ₁ : SL(2, ℂ))⁻¹ * (γ₂ : SL(2, ℂ)) ∈ gammaTwoI :=
+    gammaTwoI.mul_mem (gammaTwoI.inv_mem γ₁.2) γ₂.2
+  have hone := eq_one_of_mem_gammaTwoI_of_smul_eq hmul htriv
+  exact Subtype.ext (inv_mul_eq_one.1 hone)
+
+/-- A fundamental domain for the image of `Γ(2+i)` is one for `Γ(2+i)` itself. -/
+theorem isFundamentalDomain_of_eff {F : Set H3}
+    (h : IsFundamentalDomain gammaTwoIEff F hvol) : IsFundamentalDomain gammaTwoI F hvol := by
+  refine ⟨h.nullMeasurableSet, ?_, ?_⟩
+  · filter_upwards [h.ae_covers] with x hx
+    obtain ⟨q, hq⟩ := hx
+    obtain ⟨g, hg, hgq⟩ := Subgroup.mem_map.1 q.2
+    refine ⟨⟨(g : SL(2, ℂ)), Subgroup.mem_subgroupOf.1 hg⟩, ?_⟩
+    have : ((g : picard) : PicardEff) = (q : PicardEff) := hgq
+    show (g : SL(2, ℂ)) • x ∈ F
+    have hq' : (q : PicardEff) • x ∈ F := hq
+    rw [← this] at hq'
+    exact hq'
+  · intro γ₁ γ₂ hne
+    have hinj := gammaTwoI_toEff_injective
+    have hne' : (QuotientGroup.mk ⟨(γ₁ : SL(2, ℂ)), gammaTwoI_le_picard γ₁.2⟩ : PicardEff) ≠
+        QuotientGroup.mk ⟨(γ₂ : SL(2, ℂ)), gammaTwoI_le_picard γ₂.2⟩ := fun h' => hne (hinj h')
+    have hmem : ∀ γ : gammaTwoI,
+        (QuotientGroup.mk ⟨(γ : SL(2, ℂ)), gammaTwoI_le_picard γ.2⟩ : PicardEff) ∈
+          gammaTwoIEff := by
+      intro γ
+      exact Subgroup.mem_map.2 ⟨⟨(γ : SL(2, ℂ)), gammaTwoI_le_picard γ.2⟩,
+        Subgroup.mem_subgroupOf.2 γ.2, rfl⟩
+    exact h.aedisjoint (i := ⟨_, hmem γ₁⟩) (j := ⟨_, hmem γ₂⟩)
+      (fun hcon => hne' (congrArg Subtype.val hcon))
+
+/-- **H4.** The covolume of `Γ(2+i)` is a positive integer multiple of the volume of
+the half box: the index of its image in the effective Picard group. Together with the
+value of that volume — Humbert's formula, `G/3` — this would give the covolume in
+closed form. -/
+theorem exists_fundamentalDomain_gammaTwoI_eq_nsmul :
+    ∃ (n : ℕ) (F : Set H3), 0 < n ∧ IsFundamentalDomain gammaTwoI F hvol ∧
+      hvol F = n • hvol halfBox := by
+  have hindex : gammaTwoIEff.index ≠ 0 := by
+    have hdvd : gammaTwoIEff.index ∣ (gammaTwoI.subgroupOf picard).index :=
+      Subgroup.index_map_dvd (gammaTwoI.subgroupOf picard) (QuotientGroup.mk'_surjective _)
+    intro h
+    rw [h] at hdvd
+    exact relIndex_gammaTwoI_picard (zero_dvd_iff.1 hdvd)
+  refine ⟨gammaTwoIEff.index, ⋃ q : PicardEff ⧸ gammaTwoIEff, (Quotient.out q)⁻¹ • halfBox,
+    Nat.pos_of_ne_zero hindex, ?_, ?_⟩
+  · exact isFundamentalDomain_of_eff
+      (isFundamentalDomain_iUnion_out isFundamentalDomain_halfBox gammaTwoIEff)
+  · exact measure_eq_index_smul gammaTwoIEff (Nat.pos_of_ne_zero hindex)
+      isFundamentalDomain_halfBox
+      (isFundamentalDomain_iUnion_out isFundamentalDomain_halfBox gammaTwoIEff)
+
+theorem isOpen_halfBoxOpen : IsOpen halfBoxOpen := by
+  have c0 : Continuous fun p : H3 => p.1 0 := (continuous_apply 0).comp continuous_subtype_val
+  have c1 : Continuous fun p : H3 => p.1 1 := (continuous_apply 1).comp continuous_subtype_val
+  have c2 : Continuous fun p : H3 => p.1 2 := (continuous_apply 2).comp continuous_subtype_val
+  have cN : Continuous fun p : H3 => N p.1 := by
+    have h : (fun p : H3 => N p.1)
+        = fun p : H3 => p.1 0 * p.1 0 + p.1 1 * p.1 1 + p.1 2 * p.1 2 := rfl
+    rw [h]
+    exact ((c0.mul c0).add (c1.mul c1)).add (c2.mul c2)
+  have h : halfBoxOpen = ((fun p : H3 => |p.1 0|) ⁻¹' Iio (1 / 2)) ∩
+      (((fun p : H3 => p.1 1) ⁻¹' Ioi 0) ∩ (((fun p : H3 => p.1 1) ⁻¹' Iio (1 / 2)) ∩
+        ((fun p : H3 => N p.1) ⁻¹' Ioi 1))) := rfl
+  rw [h]
+  exact (isOpen_Iio.preimage c0.abs).inter ((isOpen_Ioi.preimage c1).inter
+    ((isOpen_Iio.preimage c1).inter (isOpen_Ioi.preimage cN)))
+
+/-- The half box has finite positive volume, so the covolume above is finite and
+positive as well. -/
+theorem hvol_halfBox_pos : 0 < hvol halfBox := by
+  have hpt : (0 : ℝ) < ![(0 : ℝ), 1 / 4, 2] 2 := by
+    norm_num [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+  have hne : halfBoxOpen.Nonempty := by
+    refine ⟨⟨![(0 : ℝ), 1 / 4, 2], hpt⟩, ?_, ?_, ?_, ?_⟩ <;>
+      norm_num [N, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+  refine lt_of_lt_of_le (hvol_pos_of_isOpen isOpen_halfBoxOpen hne) (measure_mono ?_)
+  rintro p ⟨hx, hy0, hy1, hN⟩
+  exact ⟨le_of_lt hx, le_of_lt hy0, le_of_lt hy1, le_of_lt hN⟩
+
+theorem hvol_halfBox_lt_top : hvol halfBox < ⊤ := by
+  refine lt_of_le_of_lt (measure_mono ?_) hvol_tallBox_lt_top
+  refine subset_trans ?_ picardBox_subset
+  rintro p ⟨hx, hy0, hy1, hN⟩
+  exact ⟨hx, abs_le.2 ⟨by linarith, hy1⟩, hN⟩
+
 end PicardFundamentalDomain
 
 

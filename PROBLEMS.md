@@ -138,19 +138,25 @@ which is exactly the bundle's `cosh` argument on the slice, and the logarithm
 in `hdist` is by definition `Real.arcosh`, so `Real.arcosh_cosh` finishes.
 About 20 lines.
 
-### S4 · Two explicit Kleinian groups — **open**
-(i) `isKleinian_unit : IsKleinian Unit` — minutes.
-(ii) ℤ acting by `(x, y, t) ↦ (x + n, y, t)`, with fundamental domain
-`[0,1) × ℝ × ℝ₊` of *infinite* volume — shows the definitions have nontrivial
-instances and that M2's finiteness demand is doing real work. Needs: the
-action as a `MulAction (Multiplicative ℤ) H3`, isometry of `hdist` under
-x-translation (the formula is translation-invariant termwise), measure
-preservation (translation invariance of Lebesgue measure through `comap`),
-freeness, proper discontinuity (bounded `x`-coordinate on a compact set).
-Effort: an hour or two. Less urgent since M2.5: `isKleinian_gammaTwoI` is a
-nontrivial inhabitant of `IsKleinian`, and `IsKleinian.subgroup` gives the
-Kleinian half of (ii) for any translation subgroup of `Γ(2+i)`; only the
-infinite-volume fundamental domain would remain.
+### S4 · Two explicit Kleinian groups — **proved**
+(i) `isKleinian_bot : IsKleinian (⊥ : Subgroup SL(2, ℂ))`, with `hvol_univ`:
+all of `H3` has infinite volume. The trivial group taken as `⊥` rather than
+`Unit`, so that no new `MulAction` instance on `H3` is needed.
+(ii) `translations = zpowers (T 1)`, acting by `(x, y, t) ↦ (x + n, y, t)`:
+`isKleinian_translations`, with the slab `0 ≤ x < 1` as a fundamental domain
+(`isFundamentalDomain_xSlab`) of *infinite* volume (`hvol_xSlab`), collected in
+`exists_isKleinian_fundamentalDomain_infinite_volume`. So M2's finiteness
+demand is doing real work: this group is Kleinian but contributes nothing to
+`hyperbolicVolumes`.
+
+No new action was needed: the translations sit inside `SL(2, ℂ)`, so isometry,
+measure preservation and proper discontinuity come from M2.1–M2.4
+(`hdist_smul`, `measurePreserving_smul`, `properlyDiscontinuous_of_le_picard`),
+and freeness is `x + n ≠ x`. The fundamental domain is `IsFundamentalDomain.mk'`
+with `n = -⌊x⌋`. Infinite volume is where S5 pays off: the slab is the disjoint
+union of the `ℤ`-many `y`-translates of its unit cell, each of the same volume
+by invariance, and that volume is positive because the cell contains a nonempty
+open set. About 190 lines.
 
 ### S5 · `hvol.IsOpenPosMeasure` — **proved**
 Every nonempty open set has positive volume (the instance, and

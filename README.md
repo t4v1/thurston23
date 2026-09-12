@@ -38,6 +38,13 @@ open set has positive volume (`hvol_pos_of_isOpen`). `hdist_ofUpperHalfPlane` �
 `hdist` is Mathlib's `UpperHalfPlane.dist`, so the hand-written metric agrees
 with a reviewed one.
 
+**Explicit Kleinian groups.** `isKleinian_translations` — the translations
+`(x, y, t) ↦ (x + n, y, t)` are Kleinian, with the slab `0 ≤ x < 1` as a
+fundamental domain of infinite volume; `isKleinian_bot` — so is the trivial
+group, with all of `ℍ³`. Neither is collected by `hyperbolicVolumes`, which
+asks for a finite positive volume, so Milestone 2's finiteness is not
+decoration.
+
 **Commensurability.** `hvol_ratio_rational_of_commensurable` — subgroups of one
 Kleinian group with a common finite-index subgroup have quotients of rationally
 related volume: Milestone 1 applied twice to one fundamental domain for the

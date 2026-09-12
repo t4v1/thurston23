@@ -2016,6 +2016,206 @@ theorem hyperbolicVolumes_nonempty : hyperbolicVolumes.Nonempty := by
   exact ⟨(hvol F).toReal, ↥gammaTwoI, inferInstance, inferInstance, isKleinian_gammaTwoI, F, hF,
     (ENNReal.ofReal_toReal hfin.ne).symm, ENNReal.toReal_pos hpos.ne' hfin.ne⟩
 
+/-! ## Two explicit Kleinian groups
+
+`IsKleinian` is pinned down at both ends by two concrete actions. The
+horizontal translations `(x, y, t) ↦ (x + n, y, t)` are Kleinian, with the slab
+`0 ≤ x < 1` as a fundamental domain, and the trivial group is Kleinian with all
+of `H3`. Both fundamental domains have *infinite* volume, so neither
+contributes to `hyperbolicVolumes`, which demands a finite positive one: the
+finiteness in Milestone 2 is doing real work, and Milestone 2 needs a genuine
+lattice rather than any group at all. -/
+
+section ExplicitKleinian
+
+open Set MatrixGroups Quaternion Pointwise
+
+
+/-- The group of horizontal translations `(x, y, t) ↦ (x + n, y, t)`, `n : ℤ`. -/
+noncomputable def translations : Subgroup SL(2, ℂ) := Subgroup.zpowers (T 1)
+
+theorem T_zpow (n : ℤ) : (T 1) ^ n = T (n : ℂ) := by
+  induction n using Int.induction_on with
+  | zero => simpa using T_zero.symm
+  | succ k ih =>
+      rw [zpow_add_one, ih, T_mul_T]
+      congr 1
+      push_cast
+      ring
+  | pred k ih =>
+      rw [zpow_sub_one, ih, T_inv, T_mul_T]
+      congr 1
+      push_cast
+      ring
+
+theorem mem_translations (n : ℤ) : T (n : ℂ) ∈ translations :=
+  Subgroup.mem_zpowers_iff.2 ⟨n, T_zpow n⟩
+
+theorem translations_le_picard : translations ≤ picard := by
+  rw [translations, Subgroup.zpowers_le]
+  simpa using T_mem_picard 1
+
+/-- A horizontal translation shifts the first coordinate by `n`. -/
+theorem Tint_smul_zero (n : ℤ) (p : H3) : (T ((n : ℤ) : ℂ) • p).1 0 = p.1 0 + n := by
+  rw [T_smul_val]; simp
+
+/-- A translation shifts the first coordinate by the real part. -/
+theorem T_smul_coord_zero (b : ℂ) (p : H3) : (T b • p).1 0 = p.1 0 + b.re := by
+  rw [T_smul_val]; simp
+
+/-- A translation shifts the second coordinate by the imaginary part. -/
+theorem T_smul_coord_one (b : ℂ) (p : H3) : (T b • p).1 1 = p.1 1 + b.im := by
+  rw [T_smul_val]; simp
+
+theorem translations_free {g : SL(2, ℂ)} (hg : g ∈ translations) (hne : g ≠ 1) (p : H3) :
+    g • p ≠ p := by
+  obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.1 hg
+  rw [T_zpow] at hn
+  subst hn
+  intro hfix
+  have h0 : p.1 0 + (n : ℝ) = p.1 0 := by
+    rw [← Tint_smul_zero n p, hfix]
+  have hn0 : n = 0 := by
+    have : (n : ℝ) = 0 := by linarith
+    exact_mod_cast this
+  rw [hn0] at hne
+  exact hne (by simpa using T_zero)
+
+/-- **S4(ii).** The horizontal translations are a Kleinian group. -/
+theorem isKleinian_translations : IsKleinian translations where
+  isometry g p q := hdist_smul (g : SL(2, ℂ)) p q
+  measure_preserving g := measurePreserving_smul (g : SL(2, ℂ))
+  free g hg p := translations_free g.2 (fun h => hg (Subtype.ext h)) p
+  properly_discontinuous := properlyDiscontinuous_of_le_picard translations_le_picard
+
+/-- The vertical slab `0 ≤ x < 1`. -/
+def xSlab : Set H3 := {p : H3 | p.1 0 ∈ Ico (0 : ℝ) 1}
+
+theorem measurableSet_xSlab : MeasurableSet xSlab :=
+  ((measurable_pi_apply 0).comp measurable_subtype_coe) measurableSet_Ico
+
+/-- The slab is a fundamental domain for the translations. -/
+theorem isFundamentalDomain_xSlab : IsFundamentalDomain translations xSlab hvol := by
+  refine IsFundamentalDomain.mk' measurableSet_xSlab.nullMeasurableSet fun p => ?_
+  refine ⟨⟨T (((-⌊p.1 0⌋ : ℤ) : ℂ)), mem_translations _⟩, ?_, ?_⟩
+  · show (T (((-⌊p.1 0⌋ : ℤ) : ℂ)) • p).1 0 ∈ Ico (0 : ℝ) 1
+    rw [Tint_smul_zero]
+    constructor
+    · push_cast
+      linarith [Int.floor_le (p.1 0)]
+    · push_cast
+      linarith [Int.lt_floor_add_one (p.1 0)]
+  · rintro ⟨g, hg⟩ hmem
+    obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 hg
+    rw [T_zpow] at hm
+    subst hm
+    have hx : p.1 0 + (m : ℝ) ∈ Ico (0 : ℝ) 1 := by
+      have h : (T ((m : ℤ) : ℂ) • p).1 0 ∈ Ico (0 : ℝ) 1 := hmem
+      rwa [Tint_smul_zero] at h
+    have hfl : ⌊p.1 0⌋ = -m := by
+      rw [Int.floor_eq_iff]
+      refine ⟨?_, ?_⟩
+      · push_cast
+        linarith [hx.1]
+      · push_cast
+        linarith [hx.2]
+    refine Subtype.ext ?_
+    show T ((m : ℤ) : ℂ) = T (((-⌊p.1 0⌋ : ℤ) : ℂ))
+    rw [hfl]
+    norm_num
+
+/-- The unit cell of the slab: `0 ≤ x < 1` and `0 ≤ y < 1`. -/
+def unitCell : Set H3 := {p : H3 | p.1 0 ∈ Ico (0 : ℝ) 1} ∩ {p : H3 | p.1 1 ∈ Ico (0 : ℝ) 1}
+
+theorem measurableSet_unitCell : MeasurableSet unitCell :=
+  (((measurable_pi_apply 0).comp measurable_subtype_coe) measurableSet_Ico).inter
+    (((measurable_pi_apply 1).comp measurable_subtype_coe) measurableSet_Ico)
+
+/-- The unit cell has positive volume: it contains a nonempty open set, and
+`hvol` is an `IsOpenPosMeasure`. -/
+theorem hvol_unitCell_pos : 0 < hvol unitCell := by
+  have h0 : Continuous fun p : H3 => p.1 0 := (continuous_apply 0).comp continuous_subtype_val
+  have h1 : Continuous fun p : H3 => p.1 1 := (continuous_apply 1).comp continuous_subtype_val
+  have hopen : IsOpen ({p : H3 | p.1 0 ∈ Ioo (0 : ℝ) 1} ∩ {p : H3 | p.1 1 ∈ Ioo (0 : ℝ) 1}) :=
+    (isOpen_Ioo.preimage h0).inter (isOpen_Ioo.preimage h1)
+  have hmid : (0 : ℝ) < ![(2⁻¹ : ℝ), 2⁻¹, 1] 2 := by
+    norm_num [Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons]
+  have hne : ({p : H3 | p.1 0 ∈ Ioo (0 : ℝ) 1} ∩ {p : H3 | p.1 1 ∈ Ioo (0 : ℝ) 1}).Nonempty := by
+    refine ⟨⟨![(2⁻¹ : ℝ), 2⁻¹, 1], hmid⟩, ?_, ?_⟩ <;> · constructor <;> norm_num
+  refine lt_of_lt_of_le (hvol_pos_of_isOpen hopen hne) (measure_mono ?_)
+  rintro p ⟨hx, hy⟩
+  exact ⟨Ioo_subset_Ico_self hx, Ioo_subset_Ico_self hy⟩
+
+/-- The `n`-th translate of the unit cell is the part of the slab with
+`n ≤ y < n + 1`. -/
+theorem mem_TI_smul_unitCell (n : ℤ) (p : H3) :
+    p ∈ (T (((n : ℤ) : ℂ) * Complex.I)) • unitCell ↔
+      (p.1 0 ∈ Ico (0 : ℝ) 1 ∧ p.1 1 - n ∈ Ico (0 : ℝ) 1) := by
+  rw [Set.mem_smul_set_iff_inv_smul_mem, T_inv]
+  simp [unitCell, T_smul_coord_zero, T_smul_coord_one, sub_eq_add_neg]
+
+theorem xSlab_eq_iUnion :
+    xSlab = ⋃ n : ℤ, (T (((n : ℤ) : ℂ) * Complex.I)) • unitCell := by
+  ext p
+  simp only [mem_iUnion, mem_TI_smul_unitCell, xSlab, mem_setOf_eq, mem_Ico]
+  constructor
+  · rintro ⟨hx0, hx1⟩
+    exact ⟨⌊p.1 1⌋, ⟨hx0, hx1⟩, by linarith [Int.floor_le (p.1 1)],
+      by linarith [Int.lt_floor_add_one (p.1 1)]⟩
+  · rintro ⟨n, hx, -⟩
+    exact hx
+
+/-- The slab has infinite volume: it is a disjoint union of `ℤ`-many translates
+of the unit cell, each of the same positive volume. -/
+theorem hvol_xSlab : hvol xSlab = ⊤ := by
+  have hdisj : Pairwise (Function.onFun Disjoint
+      fun n : ℤ => (T (((n : ℤ) : ℂ) * Complex.I)) • unitCell) := by
+    intro m n hmn
+    refine Set.disjoint_left.2 fun p hm hn => hmn ?_
+    have hm' := ((mem_TI_smul_unitCell m p).1 hm).2
+    have hn' := ((mem_TI_smul_unitCell n p).1 hn).2
+    rw [mem_Ico] at hm' hn'
+    have h1 : (m : ℝ) < (n : ℝ) + 1 := by linarith [hm'.1, hn'.2]
+    have h2 : (n : ℝ) < (m : ℝ) + 1 := by linarith [hn'.1, hm'.2]
+    have h1' : m < n + 1 := by exact_mod_cast h1
+    have h2' : n < m + 1 := by exact_mod_cast h2
+    omega
+  have hmeas : ∀ n : ℤ, MeasurableSet ((T (((n : ℤ) : ℂ) * Complex.I)) • unitCell) := by
+    intro n
+    rw [← Set.preimage_smul_inv]
+    exact (measurable_const_smul _) measurableSet_unitCell
+  have hsum : hvol xSlab = ∑' _ : ℤ, hvol unitCell := by
+    rw [xSlab_eq_iUnion, measure_iUnion hdisj hmeas]
+    exact tsum_congr fun n => measure_smul _ _ _
+  rw [hsum]
+  exact ENNReal.tsum_const_eq_top_of_ne_zero hvol_unitCell_pos.ne'
+
+/-- **S4(ii).** There is a Kleinian group whose fundamental domain has infinite
+volume. `hyperbolicVolumes` asks for a finite positive one, so this group
+contributes nothing to it: the finiteness in Milestone 2 is doing real work. -/
+theorem exists_isKleinian_fundamentalDomain_infinite_volume :
+    ∃ (G : Type) (_ : Group G) (_ : MulAction G H3), IsKleinian G ∧
+      ∃ F : Set H3, IsFundamentalDomain G F hvol ∧ hvol F = ⊤ :=
+  ⟨translations, inferInstance, inferInstance, isKleinian_translations, xSlab,
+    isFundamentalDomain_xSlab, hvol_xSlab⟩
+
+/-- **S4(i).** The trivial group acts Kleinianly. -/
+theorem isKleinian_bot : IsKleinian (⊥ : Subgroup SL(2, ℂ)) where
+  isometry g p q := hdist_smul (g : SL(2, ℂ)) p q
+  measure_preserving g := measurePreserving_smul (g : SL(2, ℂ))
+  free g hg p := absurd (Subtype.ext (Subgroup.mem_bot.1 g.2)) hg
+  properly_discontinuous := properlyDiscontinuous_of_le_picard (by
+    intro g hg
+    rw [Subgroup.mem_bot] at hg
+    subst hg
+    exact one_mem _)
+
+/-- Its fundamental domain is all of `H3`, again of infinite volume. -/
+theorem hvol_univ : hvol (univ : Set H3) = ⊤ :=
+  top_unique (hvol_xSlab ▸ measure_mono (subset_univ xSlab))
+
+end ExplicitKleinian
+
 /-! ## The goal -/
 
 /-- **Thurston's Question 23.** The volumes of hyperbolic `3`-manifolds are not

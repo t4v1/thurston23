@@ -1,9 +1,11 @@
 # Problems
 
 The formalization tracker for Thurston's Question 23. One entry per theorem
-or task; status is **proved** (in `Thurston23.lean`, axiom-clean at Mathlib
-`120ef86bf4`), **open**, or **blocked** (needs infrastructure listed under
-*depends on*). Effort is a working estimate, not a promise. The Mathlib side
+or task; status is **proved** (in `Thurston23.lean` or `CatalanLogSin.lean`,
+axiom-clean at Mathlib `120ef86bf4`), **open**, or **blocked** (needs
+infrastructure listed under *depends on*). The two files are the package's
+`lean_lib` targets, both default, so `lake build` compiles `CatalanLogSin` and then
+the bundle, which imports it (commit `20339b7`; see the README's build section). Effort is a working estimate, not a promise. The Mathlib side
 of the plan, with rationale, is on the plan page linked at the bottom.
 
 Legend: `M` mission targets · `S` sanity and support theorems on the bundle ·
@@ -243,7 +245,10 @@ of `Γ(2+i)` acting trivially fixes a point, so it is the identity by freeness.
 `exists_hyperbolicVolume_rat_mul_catalan : ∃ v ∈ hyperbolicVolumes, ∃ q : ℚ, v = q · G`,
 the first of the three children of the goal in the platform's accepted decomposition.
 A by-product is `catalan_pos`, positivity of Catalan's constant read off from the
-positivity of the volume. `Thurston23.lean` now imports `CatalanLogSin.lean`.
+positivity of the volume. `Thurston23.lean` now imports `CatalanLogSin.lean`; to make
+the import resolvable both files became `lean_lib` targets in `lakefile.toml`, built by
+`lake build` (Lake checks Mathlib's traces without rebuilding it, and deletes any olean
+it did not write itself, so the earlier hand-compiled olean is no longer an option).
 
 The analytic core is `CatalanLogSin.lean` (Mathlib only, no dependency on the bundle):
 

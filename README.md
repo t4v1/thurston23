@@ -124,14 +124,15 @@ One-time setup from an existing clone, then nothing is rebuilt:
 git -C ../mathlib4 worktree add --detach ../mathlib4-thurston 120ef86bf4
 (cd ../mathlib4-thurston && lake exe cache get)
 mkdir -p .lake && ln -s "$PWD/../mathlib4-thurston/.lake/packages" .lake/packages
-mkdir -p .lake/build/lib/lean
-lake env lean -o .lake/build/lib/lean/CatalanLogSin.olean CatalanLogSin.lean
-lake env lean Thurston23.lean
+lake build
 ```
 
-The second command compiles `CatalanLogSin.lean`, which the bundle imports, to
-where `lake env` looks for it. Only the `sorry` warnings on the two open targets
-should appear: `thurston_question_23` and `thurston_question_23_strong`.
+`lake build` compiles `CatalanLogSin` and then `Thurston23`, which imports it; both
+are declared as `lean_lib` targets in `lakefile.toml`, and Mathlib is not rebuilt.
+Only the `sorry` warnings on the two open targets should appear:
+`thurston_question_23` and `thurston_question_23_strong`. To check a single file
+without Lake, `lake env lean Thurston23.lean` works once `lake build CatalanLogSin`
+has produced the olean the import needs.
 
 ## Licence
 

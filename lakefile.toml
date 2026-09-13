@@ -3,7 +3,14 @@
 # v4.29.0-rc2 (see README); nothing is downloaded or rebuilt.
 name = "thurston23"
 version = "0.1.0"
+defaultTargets = ["CatalanLogSin", "Thurston23"]
 
 [[require]]
 name = "mathlib"
 path = "../mathlib4-thurston"
+
+[[lean_lib]]
+name = "CatalanLogSin"
+
+[[lean_lib]]
+name = "Thurston23"

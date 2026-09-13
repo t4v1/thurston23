@@ -343,5 +343,167 @@ theorem integral_log_two_sin :
   rw [intervalIntegral.integral_neg] at hlimit
   linarith [hlimit]
 
+/-! ### The log-sine integral at `3π/4`, and `∫₀^{π/4} log (1 - sec²θ/4) = -G/3`
+
+The volume of the half box (see `Thurston23.lean`) is `-∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ`.
+The identity `sin 3θ = sin θ (4 cos²θ - 1)` writes the integrand as
+`log (2 sin 3θ) - log (2 sin 2θ) - log (2 cos θ)`, and each piece is a log-sine integral:
+substituting, they are `⅓ ∫₀^{3π/4}`, `½ ∫₀^{π/2}` and `∫_{π/4}^{π/2}` of `log (2 sin u)`,
+whose values `G/2`, `0`, `G/2` follow from the value at `π/4` above and Mathlib's value
+at `π/2`. -/
+
+/-- `log (2 sin u)` is interval integrable on any `[a, b] ⊆ [0, π)`. -/
+theorem intervalIntegrable_log_two_sin {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) (hb : b < π) :
+    IntervalIntegrable (fun u => Real.log (2 * Real.sin u)) volume a b := by
+  have h1 : IntervalIntegrable (Real.log ∘ Real.sin) volume a b := intervalIntegrable_log_sin
+  have h2 : IntervalIntegrable (fun u => Real.log 2 + (Real.log ∘ Real.sin) u) volume a b :=
+    intervalIntegral.intervalIntegrable_const.add h1
+  rw [intervalIntegrable_iff] at h2 ⊢
+  refine h2.congr_fun (fun u hu => ?_) measurableSet_uIoc
+  rw [Set.uIoc_of_le hab] at hu
+  have hsin : 0 < Real.sin u :=
+    Real.sin_pos_of_pos_of_lt_pi (by linarith [hu.1]) (by linarith [hu.2])
+  simp only [Function.comp_apply]
+  rw [Real.log_mul two_ne_zero hsin.ne']
+
+/-- `∫₀^{π/2} log (2 sin u) du = 0`, from Mathlib's value of `∫₀^{π/2} log (sin u)`. -/
+theorem integral_log_two_sin_pi_div_two :
+    ∫ u in (0:ℝ)..π/2, Real.log (2 * Real.sin u) = 0 := by
+  have hpi := Real.pi_pos
+  have h : ∫ u in (0:ℝ)..π/2, Real.log (2 * Real.sin u)
+      = ∫ u in (0:ℝ)..π/2, (Real.log 2 + Real.log (Real.sin u)) := by
+    refine intervalIntegral.integral_congr_ae (Eventually.of_forall fun u hu => ?_)
+    rw [Set.uIoc_of_le (by positivity)] at hu
+    have hsin : 0 < Real.sin u := Real.sin_pos_of_pos_of_lt_pi hu.1 (by linarith [hu.2])
+    rw [Real.log_mul two_ne_zero hsin.ne']
+  rw [h, intervalIntegral.integral_add (g := fun u => Real.log (Real.sin u))
+    intervalIntegral.intervalIntegrable_const intervalIntegrable_log_sin,
+    intervalIntegral.integral_const, integral_log_sin_zero_pi_div_two]
+  simp only [smul_eq_mul, sub_zero]
+  ring
+
+/-- `∫_{π/4}^{π/2} log (2 sin u) du = G/2`. -/
+theorem integral_log_two_sin_pi_div_four_pi_div_two :
+    ∫ u in (π/4)..π/2, Real.log (2 * Real.sin u) = catalan / 2 := by
+  have hpi := Real.pi_pos
+  have h := intervalIntegral.integral_add_adjacent_intervals
+    (intervalIntegrable_log_two_sin (a := 0) (b := π/4) le_rfl (by positivity) (by linarith))
+    (intervalIntegrable_log_two_sin (a := π/4) (b := π/2) (by positivity) (by linarith)
+      (by linarith))
+  rw [integral_log_two_sin, integral_log_two_sin_pi_div_two] at h
+  linarith
+
+/-- `∫_{π/2}^{3π/4} log (2 sin u) du = G/2`, by `u ↦ π - u`. -/
+theorem integral_log_two_sin_pi_div_two_three_pi_div_four :
+    ∫ u in (π/2)..3*π/4, Real.log (2 * Real.sin u) = catalan / 2 := by
+  have h := intervalIntegral.integral_comp_sub_left (a := π/4) (b := π/2)
+    (fun u => Real.log (2 * Real.sin u)) π
+  rw [show π - π/2 = π/2 by ring, show π - π/4 = 3*π/4 by ring] at h
+  rw [← h, ← integral_log_two_sin_pi_div_four_pi_div_two]
+  refine intervalIntegral.integral_congr fun u _ => ?_
+  simp only [Real.sin_pi_sub]
+
+/-- **The log-sine integral at `3π/4`.** `∫₀^{3π/4} log (2 sin u) du = G/2`. -/
+theorem integral_log_two_sin_three_pi_div_four :
+    ∫ u in (0:ℝ)..3*π/4, Real.log (2 * Real.sin u) = catalan / 2 := by
+  have hpi := Real.pi_pos
+  have h := intervalIntegral.integral_add_adjacent_intervals
+    (intervalIntegrable_log_two_sin (a := 0) (b := π/2) le_rfl (by positivity) (by linarith))
+    (intervalIntegrable_log_two_sin (a := π/2) (b := 3*π/4) (by positivity) (by linarith)
+      (by linarith))
+  rw [integral_log_two_sin_pi_div_two, integral_log_two_sin_pi_div_two_three_pi_div_four] at h
+  linarith
+
+/-- `∫₀^{π/4} log (2 sin 3θ) dθ = G/6`. -/
+theorem integral_log_two_sin_three_mul :
+    ∫ θ in (0:ℝ)..π/4, Real.log (2 * Real.sin (3 * θ)) = catalan / 6 := by
+  have h := intervalIntegral.integral_comp_mul_left (a := 0) (b := π/4)
+    (fun u => Real.log (2 * Real.sin u)) (c := 3) (by norm_num)
+  rw [show (3:ℝ) * 0 = 0 by ring, show (3:ℝ) * (π/4) = 3*π/4 by ring,
+    integral_log_two_sin_three_pi_div_four] at h
+  rw [h, smul_eq_mul]
+  ring
+
+/-- `∫₀^{π/4} log (2 sin 2θ) dθ = 0`. -/
+theorem integral_log_two_sin_two_mul :
+    ∫ θ in (0:ℝ)..π/4, Real.log (2 * Real.sin (2 * θ)) = 0 := by
+  have h := intervalIntegral.integral_comp_mul_left (a := 0) (b := π/4)
+    (fun u => Real.log (2 * Real.sin u)) (c := 2) (by norm_num)
+  rw [show (2:ℝ) * 0 = 0 by ring, show (2:ℝ) * (π/4) = π/2 by ring,
+    integral_log_two_sin_pi_div_two] at h
+  rw [h, smul_zero]
+
+/-- `∫₀^{π/4} log (2 cos θ) dθ = G/2`, by `θ ↦ π/2 - θ`. -/
+theorem integral_log_two_cos :
+    ∫ θ in (0:ℝ)..π/4, Real.log (2 * Real.cos θ) = catalan / 2 := by
+  have h := intervalIntegral.integral_comp_sub_left (a := 0) (b := π/4)
+    (fun u => Real.log (2 * Real.sin u)) (π/2)
+  rw [sub_zero, show π/2 - π/4 = π/4 by ring, integral_log_two_sin_pi_div_four_pi_div_two] at h
+  rw [← h]
+  refine intervalIntegral.integral_congr fun θ _ => ?_
+  simp only [Real.sin_pi_div_two_sub]
+
+/-- The trigonometric identity behind the box: for `0 < θ ≤ π/4`,
+`1 - 1/(4 cos²θ) = 2 sin 3θ / (2 sin 2θ · 2 cos θ)`, so its logarithm splits. -/
+theorem log_one_sub_inv_four_cos_sq {θ : ℝ} (h0 : 0 < θ) (h1 : θ ≤ π/4) :
+    Real.log (1 - 1 / (4 * Real.cos θ ^ 2))
+      = Real.log (2 * Real.sin (3 * θ)) - Real.log (2 * Real.sin (2 * θ))
+        - Real.log (2 * Real.cos θ) := by
+  have hpi := Real.pi_pos
+  have hcos : 0 < Real.cos θ := Real.cos_pos_of_mem_Ioo ⟨by linarith, by linarith⟩
+  have hsin : 0 < Real.sin θ := Real.sin_pos_of_pos_of_lt_pi h0 (by linarith)
+  have hsin2 : 0 < Real.sin (2 * θ) := Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
+  have hsin3 : 0 < Real.sin (3 * θ) := Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
+  have hs := Real.sin_sq_add_cos_sq θ
+  have h3 : Real.sin (3 * θ) = Real.sin θ * (4 * Real.cos θ ^ 2 - 1) := by
+    rw [Real.sin_three_mul]
+    linear_combination (-4 * Real.sin θ) * hs
+  have hcne := hcos.ne'
+  have hsne := hsin.ne'
+  have key : 1 - 1 / (4 * Real.cos θ ^ 2)
+      = (2 * Real.sin (3 * θ)) / ((2 * Real.sin (2 * θ)) * (2 * Real.cos θ)) := by
+    rw [h3, Real.sin_two_mul]
+    field_simp
+    ring
+  rw [key, Real.log_div (by positivity) (by positivity),
+    Real.log_mul (x := 2 * Real.sin (2 * θ)) (y := 2 * Real.cos θ) (by positivity) (by positivity)]
+  ring
+
+/-- **`∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ = -G/3`.** Minus this is the volume of the
+half box, so the covolume of the Picard group is `G/3`. -/
+theorem integral_log_one_sub_inv_four_cos_sq :
+    ∫ θ in (0:ℝ)..π/4, Real.log (1 - 1 / (4 * Real.cos θ ^ 2)) = -(catalan / 3) := by
+  have hpi := Real.pi_pos
+  have hI3 : IntervalIntegrable (fun θ => Real.log (2 * Real.sin (3 * θ))) volume 0 (π/4) := by
+    have h : IntervalIntegrable (fun x => Real.log (2 * Real.sin (3 * x))) volume (0 / 3)
+        ((3*π/4) / 3) :=
+      (intervalIntegrable_log_two_sin (a := 0) (b := 3*π/4) le_rfl (by positivity)
+        (by linarith)).comp_mul_left
+    rw [show (0:ℝ) / 3 = 0 by ring, show (3*π/4) / 3 = π/4 by ring] at h
+    exact h
+  have hI2 : IntervalIntegrable (fun θ => Real.log (2 * Real.sin (2 * θ))) volume 0 (π/4) := by
+    have h : IntervalIntegrable (fun x => Real.log (2 * Real.sin (2 * x))) volume (0 / 2)
+        ((π/2) / 2) :=
+      (intervalIntegrable_log_two_sin (a := 0) (b := π/2) le_rfl (by positivity)
+        (by linarith)).comp_mul_left
+    rw [show (0:ℝ) / 2 = 0 by ring, show (π/2) / 2 = π/4 by ring] at h
+    exact h
+  have hIc : IntervalIntegrable (fun θ => Real.log (2 * Real.cos θ)) volume 0 (π/4) := by
+    have h : IntervalIntegrable (fun x => Real.log (2 * Real.sin (π/2 - x))) volume
+        (π/2 - π/4) (π/2 - π/2) :=
+      (intervalIntegrable_log_two_sin (a := π/4) (b := π/2) (by positivity) (by linarith)
+        (by linarith)).comp_sub_left (π/2)
+    rw [sub_self, show π/2 - π/4 = π/4 by ring] at h
+    simpa only [Real.sin_pi_div_two_sub] using h.symm
+  have hcongr : ∫ θ in (0:ℝ)..π/4, Real.log (1 - 1 / (4 * Real.cos θ ^ 2))
+      = ∫ θ in (0:ℝ)..π/4, (Real.log (2 * Real.sin (3 * θ)) - Real.log (2 * Real.sin (2 * θ))
+          - Real.log (2 * Real.cos θ)) := by
+    refine intervalIntegral.integral_congr_ae (Eventually.of_forall fun θ hθ => ?_)
+    rw [Set.uIoc_of_le (by positivity)] at hθ
+    exact log_one_sub_inv_four_cos_sq hθ.1 hθ.2
+  rw [hcongr, intervalIntegral.integral_sub (hI3.sub hI2) hIc, intervalIntegral.integral_sub hI3 hI2,
+    integral_log_two_sin_three_mul, integral_log_two_sin_two_mul, integral_log_two_cos]
+  ring
+
 
 end CatalanLogSin

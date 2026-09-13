@@ -49,6 +49,7 @@ reduction theory for the Picard group supplies such a set of finite volume, and
 `hvol ≠ 0` makes the volume positive. The goal is left open.
 -/
 import Mathlib
+import CatalanLogSin
 
 set_option autoImplicit false
 
@@ -2990,6 +2991,338 @@ theorem integral_radial {R : ℝ} (h0 : 0 ≤ R) (h1 : R < 1) :
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable]
   simp
 
+section Polar
+
+open scoped Real
+
+/-! ### The base in polar coordinates -/
+
+/-- The radial extent of the base `boxBase` in the direction `θ`: the ray leaves the
+base where `|x| = ½` or `y = ½`, whichever comes first, at `r = 1/(2 max(|cos θ|, sin θ))`. -/
+noncomputable def radialBound (θ : ℝ) : ℝ := 1 / (2 * max |Real.cos θ| (Real.sin θ))
+
+theorem half_lt_max_abs_cos_sin {θ : ℝ} (hθ : θ ∈ Icc 0 π) :
+    1 / 2 < max |Real.cos θ| (Real.sin θ) := by
+  by_contra h
+  push_neg at h
+  have h1 : |Real.cos θ| ≤ 1 / 2 := le_trans (le_max_left _ _) h
+  have h2 : Real.sin θ ≤ 1 / 2 := le_trans (le_max_right _ _) h
+  have h3 : 0 ≤ Real.sin θ := Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2
+  have h4 : |Real.cos θ| * |Real.cos θ| ≤ 1 / 2 * (1 / 2) :=
+    mul_le_mul h1 h1 (abs_nonneg _) (by norm_num)
+  have h5 : Real.cos θ ^ 2 ≤ 1 / 4 := by
+    rw [← sq_abs]
+    nlinarith [h4]
+  have h6 := Real.sin_sq_add_cos_sq θ
+  nlinarith
+
+theorem radialBound_pos {θ : ℝ} (hθ : θ ∈ Icc 0 π) : 0 < radialBound θ := by
+  unfold radialBound
+  have := half_lt_max_abs_cos_sin hθ
+  positivity
+
+theorem radialBound_lt_one {θ : ℝ} (hθ : θ ∈ Icc 0 π) : radialBound θ < 1 := by
+  unfold radialBound
+  have := half_lt_max_abs_cos_sin hθ
+  rw [div_lt_one (by linarith)]
+  linarith
+
+/-- A point of the polar target lands in the base iff its angle is in `[0, π)` and its
+radius is at most `radialBound`. -/
+theorem polarCoord_symm_mem_boxBase_iff {p : ℝ × ℝ} (hp : p ∈ polarCoord.target) :
+    polarCoord.symm p ∈ boxBase ↔ p.2 ∈ Ico 0 π ∧ p.1 ≤ radialBound p.2 := by
+  obtain ⟨r, θ⟩ := p
+  have ht : polarCoord.target = Ioi (0:ℝ) ×ˢ Ioo (-π) π := rfl
+  rw [ht] at hp
+  simp only [mem_prod, mem_Ioi, mem_Ioo] at hp
+  obtain ⟨hr, hθ1, hθ2⟩ := hp
+  have hsymm : polarCoord.symm (r, θ) = (r * Real.cos θ, r * Real.sin θ) := rfl
+  rw [hsymm]
+  simp only [boxBase, mem_prod, mem_Icc, mem_Ico]
+  constructor
+  · rintro ⟨⟨hx1, hx2⟩, ⟨hy1, hy2⟩⟩
+    have hsin : 0 ≤ Real.sin θ := by
+      by_contra h
+      push_neg at h
+      nlinarith [mul_pos hr (neg_pos.2 h)]
+    have hθ0 : 0 ≤ θ := by
+      by_contra h
+      push_neg at h
+      exact absurd hsin (not_le.2 (Real.sin_neg_of_neg_of_neg_pi_lt h hθ1))
+    refine ⟨⟨hθ0, hθ2⟩, ?_⟩
+    have hM := half_lt_max_abs_cos_sin ⟨hθ0, hθ2.le⟩
+    unfold radialBound
+    rw [le_div_iff₀ (by linarith)]
+    have habs : r * |Real.cos θ| ≤ 1 / 2 := by
+      have : |r * Real.cos θ| ≤ 1 / 2 := abs_le.2 ⟨by linarith, hx2⟩
+      rwa [abs_mul, abs_of_pos hr] at this
+    rcases le_total |Real.cos θ| (Real.sin θ) with h | h
+    · rw [max_eq_right h]; linarith
+    · rw [max_eq_left h]; linarith
+  · rintro ⟨⟨hθ0, _⟩, hR⟩
+    have hM := half_lt_max_abs_cos_sin ⟨hθ0, hθ2.le⟩
+    unfold radialBound at hR
+    rw [le_div_iff₀ (by linarith)] at hR
+    have hsin : 0 ≤ Real.sin θ := Real.sin_nonneg_of_nonneg_of_le_pi hθ0 hθ2.le
+    have h1 : r * |Real.cos θ| ≤ 1 / 2 := by
+      have := mul_le_mul_of_nonneg_left (le_max_left |Real.cos θ| (Real.sin θ)) hr.le
+      linarith
+    have h2 : r * Real.sin θ ≤ 1 / 2 := by
+      have := mul_le_mul_of_nonneg_left (le_max_right |Real.cos θ| (Real.sin θ)) hr.le
+      linarith
+    have h3 : |r * Real.cos θ| ≤ 1 / 2 := by
+      rw [abs_mul, abs_of_pos hr]; exact h1
+    obtain ⟨h4, h5⟩ := abs_le.1 h3
+    exact ⟨⟨h4, h5⟩, ⟨mul_nonneg hr.le hsin, h2⟩⟩
+
+/-- **The plane integral in polar coordinates**, as an iterated integral: angle outside,
+radius inside. -/
+theorem lintegral_boxBase_polar :
+    ∫⁻ z in boxBase, ENNReal.ofReal ((2 * (1 - z.1 ^ 2 - z.2 ^ 2))⁻¹)
+      = ∫⁻ θ in Ico 0 π, ∫⁻ r in Ioc 0 (radialBound θ),
+          ENNReal.ofReal (r / (2 * (1 - r ^ 2))) := by
+  set F : ℝ × ℝ → ENNReal := fun z => ENNReal.ofReal ((2 * (1 - z.1 ^ 2 - z.2 ^ 2))⁻¹) with hF
+  set G : ℝ × ℝ → ENNReal := fun p => ENNReal.ofReal (p.1 / (2 * (1 - p.1 ^ 2))) with hG
+  set S : Set (ℝ × ℝ) := {p | p.2 ∈ Ico 0 π ∧ 0 < p.1 ∧ p.1 ≤ radialBound p.2} with hS
+  have hGm : Measurable G := by fun_prop
+  have hRm : Measurable radialBound := by
+    unfold radialBound
+    fun_prop
+  have hSm : MeasurableSet S := by
+    refine (measurableSet_Ico.preimage measurable_snd).inter ?_
+    exact (measurableSet_lt measurable_const measurable_fst).inter
+      (measurableSet_le measurable_fst (hRm.comp measurable_snd))
+  have ht : polarCoord.target = Ioi (0:ℝ) ×ˢ Ioo (-π) π := rfl
+  -- the integrand on the polar side, pointwise
+  have hpt : ∀ p : ℝ × ℝ, polarCoord.target.indicator
+      (fun p => ENNReal.ofReal p.1 • boxBase.indicator F (polarCoord.symm p)) p
+      = S.indicator G p := by
+    intro p
+    by_cases hp : p ∈ polarCoord.target
+    · rw [indicator_of_mem hp]
+      have hr : 0 < p.1 := by
+        rw [ht] at hp
+        exact hp.1
+      by_cases hpS : p ∈ S
+      · rw [indicator_of_mem hpS]
+        have hmem : polarCoord.symm p ∈ boxBase :=
+          (polarCoord_symm_mem_boxBase_iff hp).2 ⟨hpS.1, hpS.2.2⟩
+        rw [indicator_of_mem hmem]
+        have hsymm : polarCoord.symm p = (p.1 * Real.cos p.2, p.1 * Real.sin p.2) := rfl
+        simp only [hF, hG, smul_eq_mul, hsymm]
+        rw [← ENNReal.ofReal_mul hr.le]
+        congr 1
+        have key : 1 - (p.1 * Real.cos p.2) ^ 2 - (p.1 * Real.sin p.2) ^ 2 = 1 - p.1 ^ 2 := by
+          have := Real.sin_sq_add_cos_sq p.2
+          linear_combination (-(p.1 ^ 2)) * this
+        rw [key, div_eq_mul_inv]
+      · rw [indicator_of_notMem hpS]
+        have hnot : polarCoord.symm p ∉ boxBase := fun h =>
+          hpS ⟨((polarCoord_symm_mem_boxBase_iff hp).1 h).1, hr,
+            ((polarCoord_symm_mem_boxBase_iff hp).1 h).2⟩
+        rw [indicator_of_notMem hnot, smul_zero]
+    · rw [indicator_of_notMem hp]
+      have hpS : p ∉ S := by
+        intro h
+        apply hp
+        rw [ht]
+        exact ⟨h.2.1, ⟨by linarith [h.1.1, Real.pi_pos], h.1.2⟩⟩
+      rw [indicator_of_notMem hpS]
+  calc ∫⁻ z in boxBase, F z
+      = ∫⁻ z, boxBase.indicator F z := (lintegral_indicator measurableSet_boxBase F).symm
+    _ = ∫⁻ p in polarCoord.target,
+          ENNReal.ofReal p.1 • boxBase.indicator F (polarCoord.symm p) :=
+        (lintegral_comp_polarCoord_symm _).symm
+    _ = ∫⁻ p, S.indicator G p := by
+        rw [← lintegral_indicator polarCoord.open_target.measurableSet]
+        exact lintegral_congr hpt
+    _ = ∫⁻ θ, ∫⁻ r, S.indicator G (r, θ) := by
+        rw [Measure.volume_eq_prod]
+        exact lintegral_prod_symm _ (hGm.indicator hSm).aemeasurable
+    _ = ∫⁻ θ in Ico 0 π, ∫⁻ r in Ioc 0 (radialBound θ),
+          ENNReal.ofReal (r / (2 * (1 - r ^ 2))) := by
+        rw [← lintegral_indicator measurableSet_Ico]
+        refine lintegral_congr fun θ => ?_
+        by_cases hθ : θ ∈ Ico 0 π
+        · rw [indicator_of_mem hθ, ← lintegral_indicator measurableSet_Ioc]
+          refine lintegral_congr fun r => ?_
+          by_cases hr : r ∈ Ioc 0 (radialBound θ)
+          · rw [indicator_of_mem hr, indicator_of_mem (show (r, θ) ∈ S from ⟨hθ, hr.1, hr.2⟩)]
+          · rw [indicator_of_notMem hr, indicator_of_notMem (fun h => hr ⟨h.2.1, h.2.2⟩)]
+        · rw [indicator_of_notMem hθ]
+          have h0 : ∀ r, S.indicator G (r, θ) = 0 := fun r =>
+            indicator_of_notMem (fun h => hθ h.1) _
+          simp_rw [h0]
+          simp
+
+/-- The inner (radial) integral, evaluated. -/
+theorem lintegral_radial {θ : ℝ} (hθ : θ ∈ Icc 0 π) :
+    ∫⁻ r in Ioc 0 (radialBound θ), ENNReal.ofReal (r / (2 * (1 - r ^ 2)))
+      = ENNReal.ofReal (-(1/4) * Real.log (1 - radialBound θ ^ 2)) := by
+  have hR0 := radialBound_pos hθ
+  have hR1 := radialBound_lt_one hθ
+  have hpos : ∀ r ∈ Icc (0:ℝ) (radialBound θ), 0 < 1 - r ^ 2 := by
+    intro r hr
+    nlinarith [hr.1, hr.2]
+  have hcont : ContinuousOn (fun r : ℝ => r / (2 * (1 - r ^ 2))) (Icc 0 (radialBound θ)) := by
+    refine ContinuousOn.div continuousOn_id (by fun_prop) fun r hr => ?_
+    have := hpos r hr
+    positivity
+  have hint : IntegrableOn (fun r : ℝ => r / (2 * (1 - r ^ 2))) (Ioc 0 (radialBound θ)) :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hR0.le).1
+      (ContinuousOn.intervalIntegrable (by rwa [uIcc_of_le hR0.le]))
+  rw [← ofReal_integral_eq_lintegral_ofReal hint, ← intervalIntegral.integral_of_le hR0.le,
+    integral_radial hR0.le hR1]
+  filter_upwards [self_mem_ae_restrict measurableSet_Ioc] with r hr
+  have := hpos r ⟨hr.1.le, hr.2⟩
+  exact div_nonneg hr.1.le (by linarith)
+
+theorem continuousOn_radialBound : ContinuousOn radialBound (Icc 0 π) := by
+  unfold radialBound
+  refine ContinuousOn.div continuousOn_const (by fun_prop) fun θ hθ => ?_
+  have := half_lt_max_abs_cos_sin hθ
+  exact ne_of_gt (by linarith)
+
+theorem continuousOn_g :
+    ContinuousOn (fun θ => -(1/4) * Real.log (1 - radialBound θ ^ 2)) (Icc 0 π) := by
+  refine continuousOn_const.mul (ContinuousOn.log ?_ fun θ hθ => ?_)
+  · exact continuousOn_const.sub (continuousOn_radialBound.pow 2)
+  · have h1 := radialBound_pos hθ
+    have h2 := radialBound_lt_one hθ
+    exact ne_of_gt (by nlinarith)
+
+/-- The outer (angular) integral as a real integral. -/
+theorem lintegral_Ico_g :
+    ∫⁻ θ in Ico 0 π, ENNReal.ofReal (-(1/4) * Real.log (1 - radialBound θ ^ 2))
+      = ENNReal.ofReal (∫ θ in (0:ℝ)..π, -(1/4) * Real.log (1 - radialBound θ ^ 2)) := by
+  have hint : IntegrableOn (fun θ => -(1/4) * Real.log (1 - radialBound θ ^ 2)) (Ioc 0 π) :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le Real.pi_pos.le).1
+      (ContinuousOn.intervalIntegrable (by rw [uIcc_of_le Real.pi_pos.le]; exact continuousOn_g))
+  rw [restrict_Ico_eq_restrict_Ioc, ← ofReal_integral_eq_lintegral_ofReal hint,
+    ← intervalIntegral.integral_of_le Real.pi_pos.le]
+  filter_upwards [self_mem_ae_restrict measurableSet_Ioc] with θ hθ
+  have h1 := radialBound_pos ⟨hθ.1.le, hθ.2⟩
+  have h2 := radialBound_lt_one ⟨hθ.1.le, hθ.2⟩
+  have hlog : Real.log (1 - radialBound θ ^ 2) ≤ 0 :=
+    Real.log_nonpos (by nlinarith) (by nlinarith)
+  show (0:ℝ) ≤ -(1/4) * Real.log (1 - radialBound θ ^ 2)
+  linarith
+
+/-! ### Folding the angle onto `[0, π/4]` -/
+
+theorem radialBound_pi_sub (θ : ℝ) : radialBound (π - θ) = radialBound θ := by
+  simp only [radialBound, Real.cos_pi_sub, Real.sin_pi_sub, abs_neg]
+
+theorem cos_nonneg_of_mem_pi_div_four {θ : ℝ} (hθ : θ ∈ Icc 0 (π/4)) : 0 ≤ Real.cos θ :=
+  Real.cos_nonneg_of_neg_pi_div_two_le_of_le (by linarith [hθ.1, Real.pi_pos])
+    (by linarith [hθ.2, Real.pi_pos])
+
+theorem sin_le_cos_of_mem_pi_div_four {θ : ℝ} (hθ : θ ∈ Icc 0 (π/4)) :
+    Real.sin θ ≤ Real.cos θ := by
+  rw [← Real.sin_pi_div_two_sub]
+  exact Real.sin_le_sin_of_le_of_le_pi_div_two (by linarith [hθ.1, Real.pi_pos])
+    (by linarith [hθ.1]) (by linarith [hθ.2])
+
+/-- On `[0, π/4]` the ray leaves the base through `x = ½`. -/
+theorem radialBound_of_mem {θ : ℝ} (hθ : θ ∈ Icc 0 (π/4)) :
+    radialBound θ = 1 / (2 * Real.cos θ) := by
+  rw [radialBound, abs_of_nonneg (cos_nonneg_of_mem_pi_div_four hθ),
+    max_eq_left (sin_le_cos_of_mem_pi_div_four hθ)]
+
+theorem radialBound_pi_div_two_sub {θ : ℝ} (hθ : θ ∈ Icc 0 (π/4)) :
+    radialBound (π/2 - θ) = radialBound θ := by
+  rw [radialBound_of_mem hθ, radialBound, Real.cos_pi_div_two_sub, Real.sin_pi_div_two_sub]
+  have hsin0 : 0 ≤ Real.sin θ :=
+    Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 (by linarith [hθ.2, Real.pi_pos])
+  rw [abs_of_nonneg hsin0, max_eq_right (sin_le_cos_of_mem_pi_div_four hθ)]
+
+/-- The angular integral over `[0, π]` folds twice onto `[0, π/4]`, where the radial
+bound is `1/(2 cos θ)`. -/
+theorem integral_g_fold :
+    ∫ θ in (0:ℝ)..π, -(1/4) * Real.log (1 - radialBound θ ^ 2)
+      = -∫ θ in (0:ℝ)..π/4, Real.log (1 - 1 / (4 * Real.cos θ ^ 2)) := by
+  set g : ℝ → ℝ := fun θ => -(1/4) * Real.log (1 - radialBound θ ^ 2) with hg
+  have hcont : ContinuousOn g (Icc 0 π) := continuousOn_g
+  have hI : ∀ a b, 0 ≤ a → a ≤ b → b ≤ π → IntervalIntegrable g volume a b := by
+    intro a b ha hab hb
+    exact ContinuousOn.intervalIntegrable
+      (hcont.mono (by rw [uIcc_of_le hab]; exact Icc_subset_Icc ha hb))
+  have hpi := Real.pi_pos
+  have h1 : ∫ θ in (0:ℝ)..π, g θ = (∫ θ in (0:ℝ)..π/2, g θ) + ∫ θ in (π/2)..π, g θ :=
+    (intervalIntegral.integral_add_adjacent_intervals
+      (hI 0 (π/2) le_rfl (by linarith) (by linarith))
+      (hI (π/2) π (by linarith) (by linarith) le_rfl)).symm
+  have h2 : ∫ θ in (π/2)..π, g θ = ∫ θ in (0:ℝ)..π/2, g θ := by
+    have := intervalIntegral.integral_comp_sub_left (a := 0) (b := π/2) (f := g) π
+    rw [sub_zero, show π - π/2 = π/2 by ring] at this
+    rw [← this]
+    refine intervalIntegral.integral_congr fun θ _ => ?_
+    simp only [hg, radialBound_pi_sub]
+  have h3 : ∫ θ in (0:ℝ)..π/2, g θ = (∫ θ in (0:ℝ)..π/4, g θ) + ∫ θ in (π/4)..π/2, g θ :=
+    (intervalIntegral.integral_add_adjacent_intervals
+      (hI 0 (π/4) le_rfl (by linarith) (by linarith))
+      (hI (π/4) (π/2) (by linarith) (by linarith) (by linarith))).symm
+  have h4 : ∫ θ in (π/4)..π/2, g θ = ∫ θ in (0:ℝ)..π/4, g θ := by
+    have := intervalIntegral.integral_comp_sub_left (a := 0) (b := π/4) (f := g) (π/2)
+    rw [sub_zero, show π/2 - π/4 = π/4 by ring] at this
+    rw [← this]
+    refine intervalIntegral.integral_congr fun θ hθ => ?_
+    rw [uIcc_of_le (by linarith)] at hθ
+    simp only [hg, radialBound_pi_div_two_sub hθ]
+  have h5 : ∫ θ in (0:ℝ)..π/4, g θ
+      = ∫ θ in (0:ℝ)..π/4, -(1/4) * Real.log (1 - 1 / (4 * Real.cos θ ^ 2)) := by
+    refine intervalIntegral.integral_congr fun θ hθ => ?_
+    rw [uIcc_of_le (by linarith)] at hθ
+    have hsq : (1 / (2 * Real.cos θ)) ^ 2 = 1 / (4 * Real.cos θ ^ 2) := by
+      rw [div_pow, mul_pow]; norm_num
+    simp only [hg, radialBound_of_mem hθ, hsq]
+  have h6 : ∫ θ in (0:ℝ)..π/4, -(1/4) * Real.log (1 - 1 / (4 * Real.cos θ ^ 2))
+      = -(1/4) * ∫ θ in (0:ℝ)..π/4, Real.log (1 - 1 / (4 * Real.cos θ ^ 2)) :=
+    intervalIntegral.integral_const_mul _ _
+  rw [h1, h2, h3, h4, h5, h6]
+  ring
+
+/-- **H5, step 2.** The plane integral giving the volume of the half box is minus
+`∫₀^{π/4} log (1 - sec²θ/4) dθ`. -/
+theorem lintegral_boxBase_eq :
+    ∫⁻ z in boxBase, ENNReal.ofReal ((2 * (1 - z.1 ^ 2 - z.2 ^ 2))⁻¹)
+      = ENNReal.ofReal (-∫ θ in (0:ℝ)..π/4, Real.log (1 - 1 / (4 * Real.cos θ ^ 2))) := by
+  rw [lintegral_boxBase_polar, ← integral_g_fold, ← lintegral_Ico_g]
+  refine setLIntegral_congr_fun measurableSet_Ico fun θ hθ => ?_
+  exact lintegral_radial ⟨hθ.1, hθ.2.le⟩
+
+/-- **The volume of the half box as a single integral**:
+`hvol halfBox = -∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ`. Steps 1 and 2 of H5 together. -/
+theorem hvol_halfBox_eq_ofReal_integral :
+    hvol halfBox
+      = ENNReal.ofReal (-∫ θ in (0:ℝ)..π/4, Real.log (1 - 1 / (4 * Real.cos θ ^ 2))) := by
+  rw [hvol_halfBox_eq_plane_integral, lintegral_boxBase_eq]
+
+/-- **H5. The volume of the half box is `G/3`**, `G` Catalan's constant: the analytic
+value `∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ = -G/3` is `CatalanLogSin.integral_log_one_sub_inv_four_cos_sq`.
+Together with `isFundamentalDomain_halfBox` this is Humbert's formula for `ℚ(i)`:
+the covolume of the Picard group is `G/3`. -/
+theorem hvol_halfBox_eq_catalan : hvol halfBox = ENNReal.ofReal (CatalanLogSin.catalan / 3) := by
+  rw [hvol_halfBox_eq_ofReal_integral, CatalanLogSin.integral_log_one_sub_inv_four_cos_sq, neg_neg]
+
+/-- Catalan's constant is positive, read off from the positivity of the volume. -/
+theorem catalan_pos : 0 < CatalanLogSin.catalan := by
+  have h := hvol_halfBox_pos
+  rw [hvol_halfBox_eq_catalan, ENNReal.ofReal_pos] at h
+  linarith
+
+/-- **The covolume of `Γ(2+i)` is a positive integer multiple of `G/3`.** (The integer
+is `60`, but the proof does not compute it; see H4 in `PROBLEMS.md`.) -/
+theorem exists_fundamentalDomain_gammaTwoI_eq_catalan :
+    ∃ (n : ℕ) (F : Set H3), 0 < n ∧ IsFundamentalDomain gammaTwoI F hvol ∧
+      hvol F = ENNReal.ofReal (n * (CatalanLogSin.catalan / 3)) := by
+  obtain ⟨n, F, hn, hF, hvolF⟩ := exists_fundamentalDomain_gammaTwoI_eq_nsmul
+  refine ⟨n, F, hn, hF, ?_⟩
+  rw [hvolF, hvol_halfBox_eq_catalan, nsmul_eq_mul, ENNReal.ofReal_mul (Nat.cast_nonneg n),
+    ENNReal.ofReal_natCast]
+
+end Polar
+
 end PicardFundamentalDomain
 
 
@@ -3007,6 +3340,25 @@ theorem hyperbolicVolumes_nonempty : hyperbolicVolumes.Nonempty := by
   obtain ⟨F, hF, hpos, hfin⟩ := exists_fundamentalDomain_gammaTwoI
   exact ⟨(hvol F).toReal, ↥gammaTwoI, inferInstance, inferInstance, isKleinian_gammaTwoI, F, hF,
     (ENNReal.ofReal_toReal hfin.ne).symm, ENNReal.toReal_pos hpos.ne' hfin.ne⟩
+
+/-- **A hyperbolic volume that is a rational multiple of Catalan's constant.** The
+covolume of `Γ(2+i)` is `n · G/3` for a positive integer `n`
+(`exists_fundamentalDomain_gammaTwoI_eq_catalan`). This is the first of the three
+children of the goal in the accepted decomposition on the platform; the second, a
+volume that is a rational multiple of `√3 L(2, χ₋₃)`, would follow the same route
+through `PSL(2, ℤ[ω])`, and the third, the irrationality of their ratio, is open
+mathematics. See `PROBLEMS.md`, section H. -/
+theorem exists_hyperbolicVolume_rat_mul_catalan :
+    ∃ v ∈ hyperbolicVolumes, ∃ q : ℚ, v = (q : ℝ) * CatalanLogSin.catalan := by
+  obtain ⟨n, F, hn, hF, hvolF⟩ := exists_fundamentalDomain_gammaTwoI_eq_catalan
+  have hpos : 0 < (n : ℝ) * (CatalanLogSin.catalan / 3) := by
+    have := catalan_pos
+    positivity
+  refine ⟨(n : ℝ) * (CatalanLogSin.catalan / 3),
+    ⟨↥gammaTwoI, inferInstance, inferInstance, isKleinian_gammaTwoI, F, hF, hvolF, hpos⟩,
+    (n : ℚ) / 3, ?_⟩
+  push_cast
+  ring
 
 /-! ## Two explicit Kleinian groups
 

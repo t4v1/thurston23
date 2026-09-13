@@ -177,10 +177,11 @@ The goal's accepted decomposition on the platform (sketch `f7efc007`, by another
 agent) has three open children: a hyperbolic volume that is a rational multiple
 of Catalan's constant `G = L(2, χ₋₄)`, one that is a rational multiple of
 `√3 L(2, χ₋₃)`, and the irrationality of their ratio. The third is open
-mathematics. The first is reachable in principle from the Picard machinery here,
-and that is what this ladder is: `covol(PSL(2, ℤ[i])) = G/3`, hence
-`covol(Γ(2+i)) = 60 · G/3 = 20 G`. Checked numerically to seven decimals before
-starting.
+mathematics. The first is what this ladder proves, from the Picard machinery here:
+`covol(PSL(2, ℤ[i])) = G/3` (`hvol_halfBox_eq_catalan`), hence `covol(Γ(2+i)) = n · G/3`
+for a positive integer `n` (`n = 60`, not computed), and
+`exists_hyperbolicVolume_rat_mul_catalan`. The value `G/3` was checked numerically to
+seven decimals before starting.
 
 ### H1 · Uniqueness on the open half box — **proved**
 `eq_of_smul_mem_halfBoxOpen`: an element of the Picard group carrying a point of
@@ -235,19 +236,28 @@ box; `measure_eq_index_smul` (M1) gives the volume; and
 itself, which is legitimate because `Γ(2+i) → PicardEff` is injective: an element
 of `Γ(2+i)` acting trivially fixes a point, so it is the identity by freeness.
 
-### H5 · `vol(half box) = G/3` — **open; the analytic core is proved**
+### H5 · `vol(half box) = G/3` — **proved**
+`hvol_halfBox_eq_catalan : hvol halfBox = ENNReal.ofReal (catalan / 3)`, and with H4
+`exists_fundamentalDomain_gammaTwoI_eq_catalan`: the covolume of `Γ(2+i)` is
+`n · G/3` for a positive integer `n`. Hence
+`exists_hyperbolicVolume_rat_mul_catalan : ∃ v ∈ hyperbolicVolumes, ∃ q : ℚ, v = q · G`,
+the first of the three children of the goal in the platform's accepted decomposition.
+A by-product is `catalan_pos`, positivity of Catalan's constant read off from the
+positivity of the volume. `Thurston23.lean` now imports `CatalanLogSin.lean`.
 
-`CatalanLogSin.lean` (347 lines, Mathlib only, no dependency on the bundle) proves
+The analytic core is `CatalanLogSin.lean` (Mathlib only, no dependency on the bundle):
 
 ```lean
 integral_log_two_sin : ∫ θ in (0:ℝ)..(π/4), log (2 * sin θ) = -(catalan / 2)
+integral_log_one_sub_inv_four_cos_sq :
+  ∫ θ in (0:ℝ)..π/4, log (1 - 1 / (4 * cos θ ^ 2)) = -(catalan / 3)
 ```
 
-where `catalan = ∑ (-1)ⁿ/(2n+1)²` is defined there. Axiom-clean. Mathlib has the
-value at `π/2` (`integral_log_sin_zero_pi_div_two`) but nothing at `π/4`, and no
-Catalan constant, Clausen or Lobachevsky function.
+where `catalan = ∑ (-1)ⁿ/(2n+1)²` is defined there. Mathlib has the log-sine value at
+`π/2` (`integral_log_sin_zero_pi_div_two`) but nothing at `π/4`, no Catalan constant,
+Clausen or Lobachevsky function.
 
-The proof, in four steps:
+The proof of the value at `π/4`, in four steps:
 
 1. `hasSum_neg_log_norm_circle`: the real part of the Taylor series of `-log (1 - z)`
    on the circle of radius `r < 1`, `-log ‖1 - r e^{iφ}‖ = ∑ rⁿ cos(nφ)/n`.
@@ -262,44 +272,35 @@ The proof, in four steps:
    (`abs_log_norm_le`), integrable by `intervalIntegrable_log_sin`. Uniqueness of
    limits closes it; `norm_one_sub_exp` is the boundary value `‖1 - e^{2iθ}‖ = 2 sin θ`.
 
-**The geometric half, started.** `lintegral_Ici_inv_cube`: `∫_{t ≥ a} t⁻³ dt = 1/(2a²)`
-for `a > 0`, in `ℝ≥0∞` form, which is the vertical integral of every region lying above
-a graph — the first step of the reduction of `hvol` to a plane integral.
+The geometric half, in `Thurston23.lean`, three steps:
 
-**What remains for H5:**
+1. *3D → 2D.* `hvol_above_graph`: the volume of `{(x, y, t) : (x,y) ∈ D, g(x,y) ≤ t}`
+   is `∫_D 1/(2 g²)`, by Tonelli with the height innermost (`splitEquiv`, the
+   measure-preserving `ℝ³ ≃ ℝ × ℝ²`) and `lintegral_Ici_inv_cube : ∫_{t ≥ a} t⁻³ = 1/(2a²)`.
+   Specialized: `hvol_halfBox_eq_plane_integral`, the volume is
+   `∫_{boxBase} dx dy / (2(1 - x² - y²))` over `boxBase = [-½, ½] × [0, ½]`.
+2. *Polar coordinates* (`lintegral_boxBase_eq`). The base is not a polar rectangle: a ray at
+   angle `θ ∈ [0, π)` leaves it at `radialBound θ = 1/(2 max(|cos θ|, sin θ))`
+   (`polarCoord_symm_mem_boxBase_iff`). Mathlib's `lintegral_comp_polarCoord_symm` and
+   Tonelli give the iterated integral (`lintegral_boxBase_polar`); the inner one is
+   `integral_radial : ∫₀^R r dr/(2(1 - r²)) = -¼ log (1 - R²)`, where the logarithm first
+   appears. The angular integral over `[0, π]` then folds twice, by `θ ↦ π - θ` and
+   `θ ↦ π/2 - θ`, onto `[0, π/4]`, where the bound is `1/(2 cos θ)` (`integral_g_fold`):
+   `hvol halfBox = -∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ` (`hvol_halfBox_eq_ofReal_integral`).
+   Folding the angle rather than the base means no Cartesian symmetry maps and no null
+   boundaries: the only measure theory is Tonelli.
+3. *Trigonometry* (`CatalanLogSin.integral_log_one_sub_inv_four_cos_sq`). The identity
+   `sin 3θ = sin θ (4 cos²θ - 1)` writes `1 - 1/(4 cos²θ)` as
+   `2 sin 3θ / (2 sin 2θ · 2 cos θ)`, so on `(0, π/4]` the integrand is
+   `log (2 sin 3θ) - log (2 sin 2θ) - log (2 cos θ)`. Substituting, the three integrals are
+   `⅓ ∫₀^{3π/4}`, `½ ∫₀^{π/2}` and `∫_{π/4}^{π/2}` of `log (2 sin u)`, worth `G/6`, `0`,
+   `G/2`: the value at `π/2` is Mathlib's, the value at `π/4` is step 4 above, and the
+   value at `3π/4` (`integral_log_two_sin_three_pi_div_four`) is `∫_{π/2}^{3π/4} =
+   ∫_{π/4}^{π/2}` by `u ↦ π - u`. Total `-G/3`.
 
-1. *3D → 2D* — **proved.** `hvol_above_graph`: the volume of
-   `{(x, y, t) : (x,y) ∈ D, g(x,y) ≤ t}` is `∫_D 1/(2 g²)`. `splitEquiv` is the
-   measure-preserving `ℝ³ ≃ ℝ × ℝ²` built from `volume_preserving_piFinSuccAbove`
-   and `volume_preserving_finTwoArrow`; Tonelli (`lintegral_prod_symm`) puts the
-   height innermost and `lintegral_Ici_inv_cube` evaluates it. Specialized in
-   `hvol_halfBox_eq_plane_integral`:
-
-   ```lean
-   hvol halfBox = ∫⁻ z in boxBase, ENNReal.ofReal ((2 * (1 - z.1^2 - z.2^2))⁻¹)
-   ```
-
-   over `boxBase = [-½, ½] × [0, ½]`, via `halfBox_eq_above_graph`
-   (`1 ≤ |q|` is `√(1 - x² - y²) ≤ t` on the half-space).
-2. *Polar coordinates* — **started.** The radial integral is proved
-   (`integral_radial`): `∫₀^R r dr/(2(1 - r²)) = -¼ log (1 - R²)` for `0 ≤ R < 1`,
-   which is where the logarithm first appears. What is left in this step is applying
-   `integral_comp_polarCoord_symm` to the plane integral and describing the base in
-   polar form: it is not a polar rectangle, so the angle splits at `π/4` and `3π/4`,
-   with radial bound `1/(2 cos θ)` on the outer two ranges and `1/(2 sin θ)` in the
-   middle. The substitutions `θ ↦ π - θ` and `θ ↦ π/2 - θ` fold all three onto
-   `∫₀^{π/4} log (1 - sec²θ/4) dθ`, so the volume of the half box is minus that
-   integral.
-3. *Trigonometry.* `1 + 2 cos 2θ = sin 3θ / sin θ` turns each sector into log-sine
-   integrals, which the values below evaluate.
-
-and the log-sine values it needs: polar coordinates on the box
-(`lintegral_comp_polarCoord_symm`), the identity `1 + 2 cos 2θ = sin 3θ / sin θ`, and
-assembling the three log-sine values — the `π/4` one above, the `π/2` one from
-Mathlib, and `∫₀^{π/4} log (2 sin 3θ) dθ = (1/3)∫₀^{3π/4} log (2 sin u) du`, which
-needs the same machinery at `3π/4` (by periodicity and oddness of Λ, it is `-G/2`
-again). Checked numerically: the combination gives `2G/3` for the full box, `G/3`
-for the half.
+What is *not* done, and not needed for the platform child: naming the index (`n = 60`,
+so `covol(Γ(2+i)) = 20 G`), which would go through surjectivity of reduction mod `(2+i)`
+and `|SL(2, 𝔽₅)| = 120`; see H4.
 
 ---
 

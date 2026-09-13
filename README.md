@@ -8,8 +8,10 @@ as a [Prove2Me](https://prove2.me) mission.
 * `Thurston23.lean` — the bundle: hyperbolic `3`-space, its volume and distance,
   Kleinian actions, fundamental domains, the set of volumes; two milestones and
   the goal.
-* `CatalanLogSin.lean` — the analytic core of the covolume: the log-sine integral
-  at `π/4` is `-G/2`, `G` Catalan's constant. Depends on Mathlib only.
+* `CatalanLogSin.lean` — the analytic core of the covolume: the log-sine integrals
+  at `π/4` and `3π/4` are `-G/2` and `G/2`, `G` Catalan's constant, and
+  `∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ = -G/3`. Depends on Mathlib only; imported by
+  the bundle.
 * `mission.md` — the mission description as submitted to the platform.
 * `PROBLEMS.md` — the tracker: what is proved, what is open, and why.
 
@@ -90,15 +92,20 @@ box is `G/3`, `G` Catalan's constant, by Humbert's formula, and
 `exists_fundamentalDomain_gammaTwoI_eq_nsmul` makes the covolume of `Γ(2 + i)` a
 positive integer multiple of it.
 
-**Catalan's constant.** `CatalanLogSin.integral_log_two_sin` —
-`∫₀^{π/4} log (2 sin θ) dθ = -G/2`. This is the analytic half of the box's volume, and
-Mathlib has nothing about Catalan's constant: it has the log-sine value at `π/2` but
-not at `π/4`, and no Clausen or Lobachevsky function. The proof runs the Taylor series
-of `log (1 - z)` along a circle of radius `r < 1`, integrates it term by term, and
-takes `r → 1` — Abel's limit theorem on the series side, dominated convergence on the
-integral side. What is still missing for the volume itself is the passage from the
-three-dimensional integral to the plane one and the polar decomposition of the box;
-see `PROBLEMS.md`, section H.
+**Catalan's constant.** `hvol_halfBox_eq_catalan` — the volume of the box is
+`G/3`, so the covolume of `Γ(2 + i)` is a positive integer multiple of `G/3`
+(`exists_fundamentalDomain_gammaTwoI_eq_catalan`) and some hyperbolic volume is a
+rational multiple of Catalan's constant (`exists_hyperbolicVolume_rat_mul_catalan`).
+The three-dimensional integral reduces to a plane integral by Tonelli, the plane
+integral goes to polar coordinates, where the angle folds onto `[0, π/4]`, and the
+result is `-∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ`. The analytic side is
+`CatalanLogSin.lean`: `integral_log_two_sin`, `∫₀^{π/4} log (2 sin θ) dθ = -G/2`,
+by running the Taylor series of `log (1 - z)` along a circle of radius `r < 1`,
+integrating term by term, and taking `r → 1` (Abel's limit theorem on the series
+side, dominated convergence on the integral side); Mathlib has the log-sine value
+at `π/2` but not at `π/4`, and no Catalan constant. The identity
+`sin 3θ = sin θ (4 cos²θ - 1)` then turns the box integrand into three log-sine
+integrals. See `PROBLEMS.md`, section H.
 
 **Goal.** `thurston_question_23` — the volumes are not all rationally related.
 The stronger form, that their `ℚ`-span is infinite dimensional, is stated as
@@ -117,11 +124,14 @@ One-time setup from an existing clone, then nothing is rebuilt:
 git -C ../mathlib4 worktree add --detach ../mathlib4-thurston 120ef86bf4
 (cd ../mathlib4-thurston && lake exe cache get)
 mkdir -p .lake && ln -s "$PWD/../mathlib4-thurston/.lake/packages" .lake/packages
+mkdir -p .lake/build/lib/lean
+lake env lean -o .lake/build/lib/lean/CatalanLogSin.olean CatalanLogSin.lean
 lake env lean Thurston23.lean
 ```
 
-Only the `sorry` warnings on the two open targets should appear:
-`thurston_question_23` and `thurston_question_23_strong`.
+The second command compiles `CatalanLogSin.lean`, which the bundle imports, to
+where `lake env` looks for it. Only the `sorry` warnings on the two open targets
+should appear: `thurston_question_23` and `thurston_question_23_strong`.
 
 ## Licence
 

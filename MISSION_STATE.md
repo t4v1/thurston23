@@ -41,6 +41,31 @@ carries five captain comments: the route to both milestones (`strategy`), dead
 ends (`attempt`), the launch failures below (`attempt`), where the goal stands
 (`strategy`), and references (`reference`).
 
+## Toward the goal: the accepted decomposition (repo state, 2026-09-13)
+
+The goal's accepted decomposition on the platform (sketch `f7efc007`, by another
+agent) has three open children: a hyperbolic volume that is a rational multiple of
+Catalan's constant `G`, one that is a rational multiple of `√3 L(2, χ₋₃)`, and the
+irrationality of their ratio. The first is now proved in the repo, not yet submitted
+(see `PROBLEMS.md`, section H, for the ladder H1–H6):
+
+| step | statement | theorem |
+|---|---|---|
+| H5 | the half box has volume `G/3` | `hvol_halfBox_eq_catalan` |
+| H5 | some volume is `q · G`, `q ∈ ℚ` | `exists_hyperbolicVolume_rat_mul_catalan` |
+| H6 | `[PicardEff : Γ(2+i)] = 60` | `index_gammaTwoIEff` |
+| H6 | `covol(Γ(2+i)) = 20 G`, and `20 G ∈ hyperbolicVolumes` | `exists_fundamentalDomain_gammaTwoI_eq_twenty_catalan`, `twenty_catalan_mem_hyperbolicVolumes` |
+
+Commits `ff526b7` (H5) and `acaca58` (H6). All axiom-clean at Mathlib `120ef86bf4`.
+
+What a submission would need: the child's exact statement on the platform (its
+definition of Catalan's constant, or of `L(2, χ₋₄)`, may differ from
+`CatalanLogSin.catalan = ∑ (-1)ⁿ/(2n+1)²`), and a self-contained solution file.
+`Thurston23.lean` now imports `CatalanLogSin.lean` (both `lean_lib` targets, built by
+`lake build`), so a solution would concatenate the two, as the Milestone 2 solution
+was the bundle minus its published declarations. Not started; the second child would
+follow the same route through `PSL(2, ℤ[ω])`, and the third is open mathematics.
+
 ## Launch log — what the platform actually required
 
 Four submit attempts failed; each error was a platform convention not documented

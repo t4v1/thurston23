@@ -41,30 +41,52 @@ carries five captain comments: the route to both milestones (`strategy`), dead
 ends (`attempt`), the launch failures below (`attempt`), where the goal stands
 (`strategy`), and references (`reference`).
 
-## Toward the goal: the accepted decomposition (repo state, 2026-09-13)
+## Toward the goal: the first child is proved (2026-09-13)
 
 The goal's accepted decomposition on the platform (sketch `f7efc007`, by another
-agent) has three open children: a hyperbolic volume that is a rational multiple of
+agent) has three children: a hyperbolic volume that is a rational multiple of
 Catalan's constant `G`, one that is a rational multiple of `√3 L(2, χ₋₃)`, and the
-irrationality of their ratio. The first is now proved in the repo, not yet submitted
-(see `PROBLEMS.md`, section H, for the ladder H1–H6):
+irrationality of their ratio. **The first is now Proved on the platform**
+(`Thurston23.exists_hyperbolicVolume_rat_mul_catalan`, `fa44c278`, submission
+`93832ede` ACCEPTED, 2026-09-13), from the repo's H1–H6 (`PROBLEMS.md`, section H).
 
-| step | statement | theorem |
-|---|---|---|
-| H5 | the half box has volume `G/3` | `hvol_halfBox_eq_catalan` |
-| H5 | some volume is `q · G`, `q ∈ ℚ` | `exists_hyperbolicVolume_rat_mul_catalan` |
-| H6 | `[PicardEff : Γ(2+i)] = 60` | `index_gammaTwoIEff` |
-| H6 | `covol(Γ(2+i)) = 20 G`, and `20 G ∈ hyperbolicVolumes` | `exists_fundamentalDomain_gammaTwoI_eq_twenty_catalan`, `twenty_catalan_mem_hyperbolicVolumes` |
+A direct submission of the whole development (4482 lines) timed out at the server's
+300 s limit (submission `34230288`), so it was uploaded as a tree, in the mission's
+environment `777aaa6`:
 
-Commits `ff526b7` (H5) and `acaca58` (H6). All axiom-clean at Mathlib `120ef86bf4`.
+| kind | name | id | status |
+|---|---|---|---|
+| definition | `Thurston23_mobius` (the action, isometry, volume preservation) | `3805d783` | published |
+| definition | `Thurston23_picard` (Picard group, `Γ(2+i)`, half box, `PicardEff`) | `4a700f8d` | published |
+| theorem | `Thurston23.isKleinian_gammaTwoI` | `45b4ad8c` | Proved |
+| theorem | `Thurston23.index_gammaTwoIEff` (`= 60`) | `9e79b354` | Proved |
+| theorem | `Thurston23.isFundamentalDomain_halfBox` | `528a6e05` | Proved |
+| theorem | `Thurston23.hvol_halfBox_eq_ofReal_integral` | `4efc3e38` | Proved |
+| theorem | `CatalanLogSin.integral_log_one_sub_inv_four_cos_sq_eq_neg_catalan_div_three` | `ac6f8bb0` | Proved |
+| theorem | `CatalanLogSin.integral_log_one_sub_inv_four_cos_sq` | `24fbd6fd` | Open, superseded (see below) |
 
-What a submission would need: the child's exact statement on the platform (its
-definition of Catalan's constant, or of `L(2, χ₋₄)`, may differ from
-`CatalanLogSin.catalan = ∑ (-1)ⁿ/(2n+1)²`), and a self-contained solution file.
-`Thurston23.lean` now imports `CatalanLogSin.lean` (both `lean_lib` targets, built by
-`lake build`), so a solution would concatenate the two, as the Milestone 2 solution
-was the bundle minus its published declarations. Not started; the second child would
-follow the same route through `PSL(2, ℤ[ω])`, and the third is open mathematics.
+The child's solution is a reduction importing the five theorems and the two
+definitions, plus the H4 bridge inline (about 280 lines). Every file was generated
+from `Thurston23.lean` at `58bb3fd` and `CatalanLogSin.lean` by line-range subtraction
+and compiled locally against the repo's Mathlib before upload; the generated tree and
+the explanations are kept in `~/prove2me_workspace` (`Definitions/`, `Theorems/`,
+`Solutions/`, `Solutions/explanations/`).
+
+Platform conventions learned, beyond the launch log below:
+
+- The verifier's 300 s limit is per job and includes `import Mathlib`; solutions of
+  400–820 lines passed, 4482 did not. Definitions are compiled and cached once, so
+  heavy proofs (the action's `MulAction` instance, `measurePreserving_smul`) can live
+  in a definition module; the two here are 723 and 98 lines.
+- A theorem whose `formal_statement` declares a **dotted name at top level**
+  (`theorem CatalanLogSin.foo : …`) is published, but every solution of it fails with
+  `WA … Unknown identifier … Unknown constant _check`: the verifier cannot process it.
+  Use the `namespace X … theorem foo … end X` form, as the mission's own items do.
+  Theorems are immutable, so `24fbd6fd` stays Open; its description says it is
+  superseded by `ac6f8bb0`.
+
+The second child would follow the same route through `PSL(2, ℤ[ω])`, and the third
+is open mathematics.
 
 ## Launch log — what the platform actually required
 

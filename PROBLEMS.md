@@ -180,10 +180,10 @@ agent) has three open children: a hyperbolic volume that is a rational multiple
 of Catalan's constant `G = L(2, χ₋₄)`, one that is a rational multiple of
 `√3 L(2, χ₋₃)`, and the irrationality of their ratio. The third is open
 mathematics. The first is what this ladder proves, from the Picard machinery here:
-`covol(PSL(2, ℤ[i])) = G/3` (`hvol_halfBox_eq_catalan`), hence `covol(Γ(2+i)) = n · G/3`
-for a positive integer `n` (`n = 60`, not computed), and
-`exists_hyperbolicVolume_rat_mul_catalan`. The value `G/3` was checked numerically to
-seven decimals before starting.
+`covol(PSL(2, ℤ[i])) = G/3` (`hvol_halfBox_eq_catalan`), hence `covol(Γ(2+i)) = 60 · G/3 = 20 G`
+(`index_gammaTwoIEff`, `exists_fundamentalDomain_gammaTwoI_eq_twenty_catalan`), so
+`20 G ∈ hyperbolicVolumes` and `exists_hyperbolicVolume_rat_mul_catalan`. The value `G/3`
+was checked numerically to seven decimals before starting.
 
 ### H1 · Uniqueness on the open half box — **proved**
 `eq_of_smul_mem_halfBoxOpen`: an element of the Picard group carrying a point of
@@ -224,11 +224,10 @@ the proof already produced `g = ±1`, only the statement was throwing it away.
 fundamental domain `F` for `Γ(2+i)` with `hvol F = n • hvol halfBox`, together
 with `hvol_halfBox_pos` and `hvol_halfBox_lt_top`.
 
-The exact value `n = 60` is *not needed*: the platform child asks for a
-**rational** multiple of Catalan's constant, so any finite index does. That
-realization shrank this step a lot — the original plan (surjectivity of reduction
-mod `(2+i)`, then `|SL(2, 𝔽₅)| = 120`, then halving for `±1`) is only needed to
-name the constant, i.e. to say `covol(Γ(2+i)) = 20 G` rather than `n G/3`.
+The exact value `n = 60` is *not needed* for the platform child, which asks for a
+**rational** multiple of Catalan's constant, so any finite index does; that
+realization shrank this step a lot. Naming the constant, `covol(Γ(2+i)) = 20 G`, is
+H6 below.
 
 What is needed is the bridge: `n` is the index of `gammaTwoIEff`, the image of
 `Γ(2+i)` in `PicardEff`, nonzero by `Subgroup.index_map_dvd` from
@@ -303,9 +302,37 @@ The geometric half, in `Thurston23.lean`, three steps:
    value at `3π/4` (`integral_log_two_sin_three_pi_div_four`) is `∫_{π/2}^{3π/4} =
    ∫_{π/4}^{π/2}` by `u ↦ π - u`. Total `-G/3`.
 
-What is *not* done, and not needed for the platform child: naming the index (`n = 60`,
-so `covol(Γ(2+i)) = 20 G`), which would go through surjectivity of reduction mod `(2+i)`
-and `|SL(2, 𝔽₅)| = 120`; see H4.
+### H6 · The index is `60`: `covol(Γ(2+i)) = 20 G` — **proved**
+`index_gammaTwoIEff : gammaTwoIEff.index = 60`, hence
+`exists_fundamentalDomain_gammaTwoI_eq_twenty_catalan` (a fundamental domain of volume
+`20 G`) and `twenty_catalan_mem_hyperbolicVolumes`. Three pieces, about 400 lines:
+
+- *Reduction modulo `2 + i` is onto `SL(2, 𝔽₅)`* (`reduction_surjective`, section
+  `IndexOfGamma`). Mathlib has no surjectivity of `SL(2, R) → SL(2, R/I)` in any form, so
+  it is proved by lifting through `SL(2, ℤ)`: every class mod `2 + i` is the class of an
+  integer (`exists_int_rep`), and the integers in `(2 + i)` are the multiples of `5`
+  (`intCast_mem_idealTwoI_iff`), so a matrix over `ℤ[i]/(2+i)` of determinant one is a
+  matrix of integers with `ad - bc ≡ 1 (mod 5)`. `exists_sl2Z_lift` lifts it: a first row
+  with coprime integer lifts (if `5 ∤ b` take `a' = a + 5u(1 - a)` with `5u + bv = 1`, which
+  is `≡ 1 (mod b)`; if `5 ∣ b` take `(a, 5)`), Bézout coefficients `u a' + v b' = 1` for
+  the second row `(-v, u)`, and a lower unipotent correction `[[1,0],[t,1]]` whose residue
+  `t` exists by `decide` over all residues (`exists_t_zmod`, `5⁶ · 5` cases).
+- *`|SL(2, 𝔽₅)| = 120`* (`card_sl2_quot`). `ℤ[i]/(2+i)` has characteristic `5`
+  (`charP_quotTwoI`), so `ZMod.castHom` is a ring isomorphism `𝔽₅ ≅ ℤ[i]/(2+i)`
+  (`zmodFiveEquiv`), which transports `SL(2, ·)`; `SL(2, 𝔽₅)` is the quadruples with
+  `ad - bc = 1` (`sl2Quad`), counted by `decide` (`card_quad`). Then
+  `index_gammaTwoIZ : gammaTwoIZ.index = 120` by `Subgroup.index_ker`.
+- *The kernel is `{±1}`* (section `KernelPmOne`). An element fixing every point is `±1`
+  (`coe_eq_pm_one_of_forall_smul_eq`): the fixed-point equations at `(0,0,1)` and
+  `(0,0,2)` force `b = c = 0`, at `(1,0,1)` they make the diagonal real, and the
+  determinant makes it `±1`; the equations are those of `fixed_point_real`, extracted
+  by `fixed_point_components`. So `picardKer = zpowers (-1)` and `Nat.card picardKer = 2`.
+  And `-1 ∉ Γ(2+i)` because `-2 ∉ (2+i)` (`neg_one_notMem_gammaTwoI`).
+- *Assembly* (section `IndexSixty`). `SL(2, ℤ[i]) ≃* picard` (`picardEquiv`, from
+  injectivity) identifies `Γ(2+i).subgroupOf picard` with the image of the kernel
+  `gammaTwoIZ`, so it is normal and of index `120` (`index_gammaTwoI_subgroupOf`);
+  `Subgroup.index_map` makes the index of `gammaTwoIEff` that of `Γ ⊔ picardKer`, and
+  `relIndex_sup_right` with `Γ ⊓ picardKer = ⊥` gives `[Γ ⊔ picardKer : Γ] = 2`.
 
 ---
 

@@ -93,9 +93,12 @@ box is `G/3`, `G` Catalan's constant, by Humbert's formula, and
 positive integer multiple of it.
 
 **Catalan's constant.** `hvol_halfBox_eq_catalan` — the volume of the box is
-`G/3`, so the covolume of `Γ(2 + i)` is a positive integer multiple of `G/3`
-(`exists_fundamentalDomain_gammaTwoI_eq_catalan`) and some hyperbolic volume is a
-rational multiple of Catalan's constant (`exists_hyperbolicVolume_rat_mul_catalan`).
+`G/3`, and the index of `Γ(2 + i)` in the effective Picard group is `60`
+(`index_gammaTwoIEff`: reduction modulo `2 + i` is onto `SL(2, 𝔽₅)`, of order `120`,
+and the kernel of the action is `{±1}`), so the covolume of `Γ(2 + i)` is `20 G`
+(`exists_fundamentalDomain_gammaTwoI_eq_twenty_catalan`) and `20 G` is a hyperbolic
+volume (`twenty_catalan_mem_hyperbolicVolumes`), a rational multiple of Catalan's
+constant (`exists_hyperbolicVolume_rat_mul_catalan`).
 The three-dimensional integral reduces to a plane integral by Tonelli, the plane
 integral goes to polar coordinates, where the angle folds onto `[0, π/4]`, and the
 result is `-∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ`. The analytic side is

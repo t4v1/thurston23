@@ -85,8 +85,36 @@ Platform conventions learned, beyond the launch log below:
   Theorems are immutable, so `24fbd6fd` stays Open; its description says it is
   superseded by `ac6f8bb0`.
 
-The second child would follow the same route through `PSL(2, ℤ[ω])`, and the third
-is open mathematics.
+## The second child is proved (2026-09-14)
+
+**`Thurston23.exists_hyperbolicVolume_rat_mul_LChiMinusThree` is Proved on the platform**
+(`1521f7ea`, submission `8c9f6ae7` ACCEPTED, 2026-09-14), from the repo's H7
+(`PROBLEMS.md`; `EisensteinLogSin.lean`, `Thurston23Eisenstein.lean`, commit `b319b0b`):
+`ℍ³/Γ(3 + ω)` has volume `n · √3 L(2, χ₋₃)/8`. Uploaded as a tree in `777aaa6`, on top of
+the existing `Thurston23_mobius`:
+
+| kind | name | id | status |
+|---|---|---|---|
+| definition | `Thurston23_eisenstein` (`EisInt`, Bianchi group, `Γ(3+ω)`, box over the rhombus, `EisEff`) | `39544c68` | published |
+| theorem | `Thurston23.isKleinian_gammaSeven` | `818ce231` | Proved (`c5020064`) |
+| theorem | `Thurston23.isFundamentalDomain_eisBox` | `653c289a` | Proved (`6aa40d7b`) |
+| theorem | `Thurston23.hvol_eisBox_eq_ofReal_integral` | `8bc7c44b` | Proved (`1a270956`) |
+| theorem | `EisensteinLogSin.integral_log_one_sub_inv_four_cos_sq_pi_div_six` | `a4546a1f` | Proved (`0eb839b5`) |
+
+The final solution is a reduction importing the four theorems plus the bridge inline
+(about 300 lines). The generated tree, explanations and scripts are in
+`~/prove2me_workspace` (`Solutions/explanations/eis_*.md`, `scripts/`).
+
+One more platform convention: the first solution of `a4546a1f` (`707d7639`) got
+`WA … expected token … Unknown identifier … Unknown constant _check` although it
+compiled. It declared a lemma with **exactly the target's name**
+(`EisensteinLogSin.integral_log_one_sub_inv_four_cos_sq_pi_div_six`) and used it in a
+term-mode `solution`; renaming the internal lemma (`…_lchi3`) and a tactic-mode
+`solution` was accepted. The other three leaves did keep target-named declarations
+inside `namespace Thurston23` and passed, so the collision seems to matter only for
+`import Mathlib` statements; avoiding it is cheap either way.
+
+The third child, the irrationality of `G / (√3 L(2, χ₋₃))`, is open mathematics.
 
 ## Launch log — what the platform actually required
 

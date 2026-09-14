@@ -115,6 +115,22 @@ task. Reduces, via Humbert, to irrationality of a ratio of `ζ_K(2)` values;
 Thurston's own pointer `[Mil 2]` is to Milnor's Lobachevsky-function
 independence conjecture (now Chowla–Milnor), which is open.
 
+The platform decomposition's third child, `catalan_ne_rat_mul_sqrt_three_LChiMinusThree`
+(`7a432ef7`: `G ≠ q √3 L(2, χ₋₃)` for every `q : ℚ`), is exactly this open core. Numerically
+`G / (√3 L(2, χ₋₃)) = 0.6768608078…` (the platform description's `0.6768661…` is off in the
+sixth digit), with continued fraction `[0; 1, 2, 10, 1, 1, 3, 3, 1, 1, 2, 17, …]`.
+
+- **M3.1 · Finite shadow: no rational of denominator below `1733`** — **proved**:
+  `catalan_ne_rat_mul_sqrt_three_LChiMinusThree_of_den_lt`, in `CatalanEisensteinRatio.lean`
+  (Mathlib only), is the third child's statement under the extra hypothesis `q.den < 1733`.
+  Tails of `∑ 1/(mk+c)²` are bracketed by telescoping sums, `[1/(my) - (m/12)/y³, 1/(my)]` with
+  `y = c - m/2` (`tsum_le`, `le_tsum`); forty terms give `G ∈ [0.91596551, 0.91596568]` and
+  `L(2, χ₋₃) ∈ [0.78130225, 0.78130260]` (`catalan_bounds`, `lchi3_bounds`), so the ratio lies
+  strictly between the Farey neighbours `664/981` and `509/752` (`ratio_mem`), and a fraction
+  strictly between Farey neighbours `a/b < c/d` has denominator at least `b + d`
+  (`add_le_den_of_farey`). More terms push the bound up (sixty terms: `2714`), but no finite
+  computation reaches the statement itself.
+
 ---
 
 ## S — Sanity and support theorems on the bundle

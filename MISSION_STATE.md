@@ -114,7 +114,9 @@ term-mode `solution`; renaming the internal lemma (`…_lchi3`) and a tactic-mod
 inside `namespace Thurston23` and passed, so the collision seems to matter only for
 `import Mathlib` statements; avoiding it is cheap either way.
 
-The third child, the irrationality of `G / (√3 L(2, χ₋₃))`, is open mathematics.
+The third child, the irrationality of `G / (√3 L(2, χ₋₃))` (`7a432ef7`, no submissions), is
+open mathematics. The repo proves its finite shadow, the same statement for `q.den < 1733`
+(`PROBLEMS.md` M3.1, `CatalanEisensteinRatio.lean`); it is not on the platform.
 
 ## Launch log — what the platform actually required
 

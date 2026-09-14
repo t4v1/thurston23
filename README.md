@@ -19,6 +19,9 @@ as a [Prove2Me](https://prove2.me) mission.
   `SL(2, ℤ[ω])`, its torsion-free congruence subgroup of level `3 + ω`, a fundamental
   domain and its volume, so that a hyperbolic volume is a positive rational multiple
   of `√3 L(2, χ₋₃)`. Imports `Thurston23` and `EisensteinLogSin`.
+* `CatalanEisensteinRatio.lean` — the finite shadow of the open core: no rational
+  of denominator below `1733` equals `G / (√3 L(2, χ₋₃))`, from rigorous bounds on
+  both series and a Farey argument. Depends on Mathlib only.
 * `mission.md` — the mission description as submitted to the platform.
 * `PROBLEMS.md` — the tracker: what is proved, what is open, and why.
 
@@ -138,8 +141,8 @@ lake build
 ```
 
 `lake build` compiles `CatalanLogSin`, `Thurston23` and `EisensteinLogSin`, then
-`Thurston23Eisenstein`, which imports the last two; all four are declared as `lean_lib`
-targets in `lakefile.toml`, and Mathlib is not rebuilt.
+`Thurston23Eisenstein`, which imports the last two, and `CatalanEisensteinRatio`; all
+five are declared as `lean_lib` targets in `lakefile.toml`, and Mathlib is not rebuilt.
 Only the `sorry` warnings on the two open targets should appear:
 `thurston_question_23` and `thurston_question_23_strong`. To check a single file
 without Lake, `lake env lean Thurston23.lean` works once `lake build CatalanLogSin`

@@ -12,6 +12,13 @@ as a [Prove2Me](https://prove2.me) mission.
   at `π/4` and `3π/4` are `-G/2` and `G/2`, `G` Catalan's constant, and
   `∫₀^{π/4} log (1 - 1/(4 cos²θ)) dθ = -G/3`. Depends on Mathlib only; imported by
   the bundle.
+* `EisensteinLogSin.lean` — the same argument at a general endpoint: the log-sine
+  integral at `π/3` is `-(√3/4) L(2, χ₋₃)`, and
+  `∫₀^{π/6} log (1 - 1/(4 cos²θ)) dθ = -√3 L(2, χ₋₃)/8`. Imports `CatalanLogSin`.
+* `Thurston23Eisenstein.lean` — the Eisenstein example: the Bianchi group
+  `SL(2, ℤ[ω])`, its torsion-free congruence subgroup of level `3 + ω`, a fundamental
+  domain and its volume, so that a hyperbolic volume is a positive rational multiple
+  of `√3 L(2, χ₋₃)`. Imports `Thurston23` and `EisensteinLogSin`.
 * `mission.md` — the mission description as submitted to the platform.
 * `PROBLEMS.md` — the tracker: what is proved, what is open, and why.
 
@@ -130,8 +137,9 @@ mkdir -p .lake && ln -s "$PWD/../mathlib4-thurston/.lake/packages" .lake/package
 lake build
 ```
 
-`lake build` compiles `CatalanLogSin` and then `Thurston23`, which imports it; both
-are declared as `lean_lib` targets in `lakefile.toml`, and Mathlib is not rebuilt.
+`lake build` compiles `CatalanLogSin`, `Thurston23` and `EisensteinLogSin`, then
+`Thurston23Eisenstein`, which imports the last two; all four are declared as `lean_lib`
+targets in `lakefile.toml`, and Mathlib is not rebuilt.
 Only the `sorry` warnings on the two open targets should appear:
 `thurston_question_23` and `thurston_question_23_strong`. To check a single file
 without Lake, `lake env lean Thurston23.lean` works once `lake build CatalanLogSin`

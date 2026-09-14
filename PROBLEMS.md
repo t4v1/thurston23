@@ -334,6 +334,45 @@ The geometric half, in `Thurston23.lean`, three steps:
   `Subgroup.index_map` makes the index of `gammaTwoIEff` that of `Γ ⊔ picardKer`, and
   `relIndex_sup_right` with `Γ ⊓ picardKer = ⊥` gives `[Γ ⊔ picardKer : Γ] = 2`.
 
+### H7 · The second child: a volume that is a rational multiple of `√3 L(2, χ₋₃)` — **proved**
+`exists_hyperbolicVolume_rat_mul_LChiMinusThree`, in `Thurston23Eisenstein.lean`: the covolume of
+the congruence subgroup `Γ(3 + ω)` of the Bianchi group `SL(2, ℤ[ω])`, `ω = e^{2πi/3}`, is
+`n · √3 L(2, χ₋₃)/8` for a positive integer `n` (`exists_fundamentalDomain_gammaSeven_eq_lchi3`),
+where `L(2, χ₋₃) = ∑ (1/(3n+1)² - 1/(3n+2)²)`. The route is H1–H5 for `ℤ[ω]`; what changed:
+
+- *The ring.* Mathlib has no Eisenstein integers, so `EisInt` is the structure `a + bω` with the
+  multiplication `(a + bω)(c + dω) = (ac - bd) + (ad + bc - bd)ω`, and its `CommRing` instance is
+  pulled back along the injective embedding in `ℂ` (`Function.Injective.commRing`). Norm
+  `a² - ab + b²` (`normSq_toC`).
+- *Proper discontinuity* is now stated once for any subgroup of `SL(2, ℂ)` with finitely many
+  elements whose entries lie in a disc (`properlyDiscontinuous_of_finite_entries`); the Bianchi group
+  qualifies since `2(a² - ab + b²) ≥ a², b²`.
+- *The torsion-free subgroup* has level `3 + ω`, a prime of norm `7`: `a + bω ∈ (3 + ω)` iff
+  `7 ∣ 2a + b` (`mem_idealP_iff`), so a trace `≡ 2` in `[-2, 2]` is `2`. Levels of norm `2`, `3`, `4`
+  would not do: they leave `-1` or elements of order `3` in the subgroup.
+- *The fundamental domain* is the box over the rhombus `0 ≤ x ≤ ½`, `0 ≤ x + √3 y ≤ 1`, a third of
+  the hexagonal Voronoi cell of `ℤ[ω]` (`isFundamentalDomain_eisBox`). The Voronoi property on the
+  rhombus is an affine function of `(x, x + √3 y)` whose corner values are nonnegative integer
+  combinations of `n(n - 1)` (`cell_of_eisBase`, `cell_strict_of_eisBaseOpen`). Covering takes the
+  nearest lattice point (`exists_nearest_eis`) and a rotation by `ω` or `ω²`, realised by
+  `D(ω²)`, `D(ω)`. Uniqueness: `t² > ⅔` on the open box rules out `|c|² ≥ 2`, the Voronoi property
+  rules out `|c| = 1`, and of the six units only `±1` square to a rotation that keeps the open
+  rhombus (`eis_unit_cases`, `not_eisBaseOpen_rot`). The boundary lies in two coordinate planes, two
+  planes `x + √3 y = c` (null as preimages of coordinate planes under a shear of determinant `1`,
+  `volume_plane_sqrt3`), and the unit sphere.
+- *The volume.* In polar coordinates the rhombus is `θ ∈ [-π/6, π/2]`,
+  `r ≤ 1/(2 max(cos θ, cos(θ - π/3)))`; the angle folds by `θ ↦ θ - π/3` and `θ ↦ -θ` onto `[0, π/6]`:
+  `hvol eisBox = -∫₀^{π/6} log (1 - 1/(4 cos²θ)) dθ` (`hvol_eisBox_eq_ofReal_integral`).
+- *The analytic core*, `EisensteinLogSin.lean` (Mathlib and `CatalanLogSin.lean` only): the log-sine
+  argument of H5 for a general endpoint `0 ≤ a < π/2`, `∫₀^a log (2 sin θ) = -∑ sin(2na)/(2n²)`
+  (`integral_log_two_sin_eq_tsum`); at `a = π/3` the series is `(√3/4) L(2, χ₋₃)` by the residues of
+  `n` mod `3` (`hasSum_sin_two_pi_div_three`); and the identity `sin 3θ = sin θ (4 cos²θ - 1)` gives
+  `∫₀^{π/6} log (1 - 1/(4 cos²θ)) dθ = -√3 L(2, χ₋₃)/8`. So `hvol eisBox = √3 L(2, χ₋₃)/8`
+  (`hvol_eisBox_eq`), Humbert's formula for `ℚ(√-3)`.
+
+Not computed, and not needed: the index `n`. It should be `|PSL(2, 𝔽₇)| = 168`, by the argument of
+H6 with `𝔽₇` in place of `𝔽₅`.
+
 ---
 
 ## L — Mathlib PR ladder (dependency order)

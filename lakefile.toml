@@ -3,7 +3,7 @@
 # v4.29.0-rc2 (see README); nothing is downloaded or rebuilt.
 name = "thurston23"
 version = "0.1.0"
-defaultTargets = ["CatalanLogSin", "Thurston23", "EisensteinLogSin", "Thurston23Eisenstein", "CatalanEisensteinRatio"]
+defaultTargets = ["CatalanLogSin", "Thurston23", "EisensteinLogSin", "Thurston23Eisenstein", "CatalanEisensteinRatio", "CatalanLattice"]
 
 [[require]]
 name = "mathlib"
@@ -23,3 +23,6 @@ name = "Thurston23Eisenstein"
 
 [[lean_lib]]
 name = "CatalanEisensteinRatio"
+
+[[lean_lib]]
+name = "CatalanLattice"

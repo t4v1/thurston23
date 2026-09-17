@@ -131,6 +131,28 @@ sixth digit), with continued fraction `[0; 1, 2, 10, 1, 1, 3, 3, 1, 1, 2, 17, �
   (`add_le_den_of_farey`). More terms push the bound up (sixty terms: `2714`), but no finite
   computation reaches the statement itself.
 
+- **M3.2 · Finite shadow of the transcendence of `G`** — **proved**:
+  `CatalanLattice.catalan_aeval_ne_zero_deg1` … `deg10`, in `CatalanLattice.lean`. For each
+  `d ≤ 10`, `aeval G P ≠ 0` for every nonzero `P : ℤ[X]` with `natDegree ≤ d` and all
+  coefficients bounded by `H(d)`:
+
+  | `d` | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | `H(d)` | `1.41·10¹⁹` | `5.00·10¹²` | `1.99·10⁹` | `1.24·10⁷` | `791000` | `90100` | `14100` | `3200` | `1220` | `513` |
+
+  Three hundred terms of `∑ 1/(4k+1)²` and `∑ 1/(4k+3)²`, with Euler–Maclaurin telescoping
+  brackets of orders 8 and 9 for the tails (`CatalanTail.hi_step`, `lo_step`: each step is a
+  `field_simp; ring` identity whose numerator has nonnegative coefficients), give `G` to 46
+  decimals (`CatalanTail.catalan_mem`). With `X i = round (10³⁹ G^i)`, a relation of height `H`
+  is a vector of squared length at most `(d+1) H² (1 + (d+1)/4)` in the lattice `{(m, m·X)}`.
+  An LLL-reduced basis (unimodular `U` with inverse `V`) and integer Gram–Schmidt vectors `Y j`
+  bound every nonzero lattice vector below (`LatticeCert.pnorm2_latVec_ge`: take the last
+  nonzero coordinate in the basis and apply Cauchy–Schwarz against `Y j`); no LLL theory is
+  formalized, only the certificate is checked, by `decide +kernel`. Axioms: `propext`,
+  `Classical.choice`, `Quot.sound`. The file checks in about two minutes. The bound scales like
+  `10^(39/(d+1))`, so more precision raises it, but, as with M3.1, no finite computation
+  reaches transcendence itself.
+
 ---
 
 ## S — Sanity and support theorems on the bundle
